@@ -250,6 +250,14 @@
                 <input type="text" id="host-hero-name" placeholder="Party Leader">
             </div>
             <div class="input-group">
+                <label>Gender / Pronouns</label>
+                <select id="host-hero-gender">
+                    <option value="female (she/her)">Female (She/Her)</option>
+                    <option value="male (he/him)">Male (He/Him)</option>
+                    <option value="non-binary (they/them)">Non-Binary (They/Them)</option>
+                </select>
+            </div>
+            <div class="input-group">
                 <label>Your Role</label>
                 <select id="host-hero-role">
                     <option value="Warrior">Warrior / Vanguard</option>
@@ -271,6 +279,14 @@
             <div class="input-group">
                 <label>Hero Name</label>
                 <input type="text" id="player-hero-name" placeholder="Hero Name">
+            </div>
+            <div class="input-group">
+                <label>Gender / Pronouns</label>
+                <select id="player-hero-gender">
+                    <option value="female (she/her)">Female (She/Her)</option>
+                    <option value="male (he/him)">Male (He/Him)</option>
+                    <option value="non-binary (they/them)">Non-Binary (They/Them)</option>
+                </select>
             </div>
             <div class="input-group">
                 <label>Role</label>
@@ -436,7 +452,7 @@
                 try {
                     var parsed = JSON.parse(savedData);
                     document.getElementById('resume-container').style.display = 'block';
-                    var rosterNames = parsed.party.map(function(p) { return p.name + " (Lvl " + p.level + ")"; }).join(", ");
+                    var rosterNames = parsed.party.map(function(p) { return p.name + " (" + (p.gender || "she/her") + ", Lvl " + p.level + ")"; }).join(", ");
                     document.getElementById('save-info').innerText = "Saved: " + parsed.genre + " (" + rosterNames + ") - " + parsed.date;
                 } catch (e) {}
             }
@@ -627,11 +643,13 @@
                 activeGenre = document.getElementById('host-genre').value;
 
                 var hostName = document.getElementById('host-hero-name').value.trim() || "Party Leader";
+                var hostGender = document.getElementById('host-hero-gender').value;
                 var hostRole = document.getElementById('host-hero-role').value;
 
                 myHero = {
                     id: myClientId,
                     name: hostName,
+                    gender: hostGender,
                     role: hostRole,
                     level: 1,
                     hp: 20,
@@ -678,7 +696,7 @@
 
             document.getElementById('narrative-box').innerHTML = 
                 '<b>Room Code: ' + currentRoomCode + '</b><br>' +
-                '⚔️ <b>' + myHero.name + '</b> (' + myHero.role + ') is ready.<br>' +
+                '⚔️ <b>' + myHero.name + '</b> (' + myHero.gender + ', ' + myHero.role + ') is ready.<br>' +
                 'Connecting to party relay...';
 
             connectBroker(function() {
@@ -699,7 +717,7 @@
                     } else {
                         document.getElementById('narrative-box').innerHTML = 
                             '<b>Room Code: ' + currentRoomCode + '</b><br>' +
-                            '⚔️ <b>' + myHero.name + '</b> (' + myHero.role + ') is ready.<br>' +
+                            '⚔️ <b>' + myHero.name + '</b> (' + myHero.gender + ', ' + myHero.role + ') is ready.<br>' +
                             'Have other devices enter room code <b>' + currentRoomCode + '</b> and tap Join!';
                         renderHostStartControl();
                         speakNarrative("Room created. Room code is " + currentRoomCode.split('').join(' '));
@@ -713,6 +731,7 @@
             try {
                 var codeInput = document.getElementById('join-room-code').value.trim().toUpperCase();
                 var nameInput = document.getElementById('player-hero-name').value.trim() || "Adventurer";
+                var genderInput = document.getElementById('player-hero-gender').value;
                 var roleInput = document.getElementById('player-hero-role').value;
 
                 if (codeInput.length !== 4) {
@@ -726,6 +745,7 @@
                 myHero = {
                     id: myClientId,
                     name: nameInput,
+                    gender: genderInput,
                     role: roleInput,
                     level: 1,
                     hp: 20,
@@ -783,6 +803,7 @@
                     var existingIdx = party.findIndex(function(p) { return p.name.toLowerCase() === data.hero.name.toLowerCase(); });
                     if (existingIdx !== -1) {
                         party[existingIdx].id = data.hero.id;
+                        if (data.hero.gender) party[existingIdx].gender = data.hero.gender;
                         broadcastToAll({
                             type: 'RESTORE_HERO_STATS',
                             hero: party[existingIdx]
@@ -796,7 +817,7 @@
                         log("Player joined: " + data.hero.name);
                         broadcastToAll({
                             type: 'SYSTEM_MSG',
-                            text: '⚔️ <b>' + data.hero.name + '</b> the ' + data.hero.role + ' has entered the realm!'
+                            text: '⚔️ <b>' + data.hero.name + '</b> (' + data.hero.gender + ') the ' + data.hero.role + ' has entered the realm!'
                         });
                     }
                     saveGameState();
@@ -932,7 +953,7 @@
             document.getElementById('dynamic-choices').innerHTML = '';
             gameHistory.push({
                 role: "user",
-                parts: [{ text: "The heroes have regrouped and resumed their quest. Summarize the immediate situation and call on a hero to act." }]
+                parts: [{ text: "The heroes have regrouped and resumed their quest. Summarize the immediate situation, strictly respecting each character's pronouns, and call on a hero to act." }]
             });
             fetchAndBroadcastGemini();
         }
@@ -942,13 +963,16 @@
                 alert('Wait for heroes to join.');
                 return;
             }
-            var partyRoster = party.map(function(p) { return p.name + ' (Level ' + p.level + ' ' + p.role + ')'; }).join(', ');
+            var partyRoster = party.map(function(p) { 
+                return p.name + ' (' + (p.gender || "she/her") + ', Level ' + p.level + ' ' + p.role + ')'; 
+            }).join(', ');
 
             gameHistory = [
                 {
                     role: "user",
                     parts: [{
-                        text: 'You are the DM running a ' + activeGenre + ' campaign for: ' + partyRoster + '.\n' +
+                        text: 'You are the DM running a ' + activeGenre + ' campaign for this hero party: ' + partyRoster + '.\n' +
+'CRITICAL RULE: Always use the exact pronouns indicated in each hero\'s roster entry (e.g. if Drew is listed as female she/her, NEVER refer to Drew as he/him).\n' +
 'Respond ONLY with valid JSON structured exactly as:\n' +
 '{\n' +
 '  "narrative": "scene description",\n' +
@@ -957,7 +981,7 @@
 '  "completedTask": false,\n' +
 '  "levelUpHero": "NONE"\n' +
 '}\n' +
-'When an action or battle completes a distinct challenge, set "completedTask": true and set "levelUpHero" to that hero\'s name (or ALL).'
+'When an action completes a challenge or task, set "completedTask": true and set "levelUpHero" to that hero\'s name (or ALL).'
                     }]
                 },
                 {
@@ -966,7 +990,7 @@
                 },
                 {
                     role: "user",
-                    parts: [{ text: "Begin the quest. Introduce the opening dilemma and call on a specific hero to take the first action." }]
+                    parts: [{ text: "Begin the quest. Introduce the opening dilemma and call on a specific hero to take the first action, adhering strictly to their stated pronouns." }]
                 }
             ];
 
@@ -975,12 +999,15 @@
         }
 
         async function triggerGeminiResolution(heroName, action, naturalRoll, total) {
+            var activeHero = party.find(function(p) { return p.name.toLowerCase() === heroName.toLowerCase(); });
+            var pronounNote = activeHero && activeHero.gender ? ' [Pronouns: ' + activeHero.gender + ']' : '';
+
             gameHistory.push({
                 role: "user",
                 parts: [{
-                    text: '[Turn Check] ' + heroName + ' attempted: "' + action + '".\n' +
+                    text: '[Turn Check] ' + heroName + pronounNote + ' attempted: "' + action + '".\n' +
 'Natural d20 Roll: ' + naturalRoll + ', Total with Modifier: ' + total + '.\n' +
-'Describe the outcome. If this roll completes a key task or defeats a foe, set completedTask: true and levelUpHero: "' + heroName + '". Designate who acts next.'
+'Describe the outcome respecting ' + heroName + '\'s pronouns. If this roll completes a key task or defeats a foe, set completedTask: true and levelUpHero: "' + heroName + '". Designate who acts next.'
                 }]
             });
             fetchAndBroadcastGemini();
