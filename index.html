@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>D&D Mobile Storyteller - Live Party</title>
+    <!-- MQTT over WebSockets for firewall & cellular traversal -->
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <style>
         :root {
@@ -152,11 +153,25 @@
         }
 
         .badge {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
             padding: 4px 8px;
             border-radius: 4px;
             font-size: 0.8rem;
             background: #444;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #e74c3c;
+            display: inline-block;
+        }
+        .status-dot.online {
+            background-color: #2ecc71;
+            box-shadow: 0 0 6px #2ecc71;
         }
 
         .waiting-text {
@@ -239,7 +254,7 @@
     <!-- SCREEN 2: GAMEPLAY -->
     <div id="screen-game" class="screen">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
-            <span class="badge" id="display-room-code">Room: ----</span>
+            <span class="badge" id="display-room-code"><span id="net-status-dot" class="status-dot"></span> Room: ----</span>
             <span class="badge" id="display-player-role">Connecting...</span>
         </div>
 
@@ -265,7 +280,7 @@
     </div>
 
     <script>
-        const API_KEY = "AQ.Ab8RN6KoxBba0uWyWBCSI-fGnGOKhEEV_irReIBDXiliaLlLJg";[span_3](start_span)[span_3](end_span)
+        const API_KEY = "AQ.Ab8RN6KoxBba0uWyWBCSI-fGnGOKhEEV_irReIBDXiliaLlLJg";[span_0](start_span)[span_0](end_span)
         const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
 
         let mqttClient = null;
@@ -278,28 +293,56 @@
         let pendingActionText = "";
         let gameHistory = [];
 
-        function connectBroker(onSuccess) {
-            mqttClient = mqtt.connect('wss://broker.hivemq.com:8884/mqtt');
-
-            mqttClient.on('connect', () => {
-                if (onSuccess) onSuccess();
-            });
-
-            mqttClient.on('message', (topic, message) => {
-                try {
-                    const data = JSON.parse(message.toString());
-                    handleIncomingNetworkMessage(data);
-                } catch (err) {
-                    console.error("Malformed packet:", err);
-                }
-            });
-
-            mqttClient.on('error', (err) => {
-                console.error("Relay connection error:", err);
-                alert("Connection error. Check your network.");
-            });
+        function setStatusOnline(isOnline) {
+            const dot = document.getElementById('net-status-dot');
+            if (dot) {
+                if (isOnline) dot.classList.add('online');
+                else dot.classList.remove('online');
+            }
         }
 
+        function connectBroker(onSuccess) {
+            const brokers = [
+                'wss://broker.hivemq.com:8884/mqtt',
+                'wss://broker.emqx.io:8084/mqtt'
+            ];
+            let currentBrokerIdx = 0;
+
+            function tryConnect() {
+                mqttClient = mqtt.connect(brokers[currentBrokerIdx], {
+                    connectTimeout: 5000,
+                    reconnectPeriod: 2500
+                });
+
+                mqttClient.on('connect', () => {
+                    console.log(`Connected to relay: ${brokers[currentBrokerIdx]}`);
+                    setStatusOnline(true);
+                    if (onSuccess) onSuccess();
+                });
+
+                mqttClient.on('message', (topic, message) => {
+                    try {
+                        const data = JSON.parse(message.toString());
+                        handleIncomingNetworkMessage(data);
+                    } catch (err) {
+                        console.error("Malformed packet:", err);
+                    }
+                });
+
+                mqttClient.on('error', (err) => {
+                    console.error("Broker connection error:", err);
+                    setStatusOnline(false);
+                });
+
+                mqttClient.on('offline', () => {
+                    setStatusOnline(false);
+                });
+            }
+
+            tryConnect();
+        }
+
+        // 1. HOST SETUP
         function setupHost() {
             roomCode = generateCode(4);
             currentTopic = `dnd-party-room/${roomCode}`;
@@ -319,26 +362,33 @@
                 xp: 0
             };
 
-            party.push(myHero);
+            party = [myHero];
+
+            // Immediate transition
+            switchScreen('screen-game');
+            document.getElementById('display-room-code').innerHTML = `<span id="net-status-dot" class="status-dot"></span> Room: ${roomCode}`;
+            document.getElementById('display-player-role').innerText = `${myHero.name} (${myHero.role}) [Host]`;
+            renderHeroHUD();
+
+            document.getElementById('narrative-box').innerHTML = `
+                <b>Room Code: ${roomCode}</b><br>
+                ⚔️ <b>${myHero.name}</b> (${myHero.role}) is ready.<br>
+                <em>Connecting to live session channel...</em>
+            `;
 
             connectBroker(() => {
-                isHost = true;
-                mqttClient.subscribe(currentTopic);
-
-                switchScreen('screen-game');
-                document.getElementById('display-room-code').innerText = `Room: ${roomCode}`;
-                document.getElementById('display-player-role').innerText = `${myHero.name} (${myHero.role}) [Host]`;
-                renderHeroHUD();
-
-                document.getElementById('narrative-box').innerHTML = `
-                    <b>Room Code: ${roomCode}</b><br>
-                    ⚔️ <b>${myHero.name}</b> (${myHero.role}) is ready.<br>
-                    Connect other devices with room code <b>${roomCode}</b>. Tap start once assembled!
-                `;
-                renderHostStartControl();
+                mqttClient.subscribe(currentTopic, () => {
+                    document.getElementById('narrative-box').innerHTML = `
+                        <b>Room Code: ${roomCode}</b><br>
+                        ⚔️ <b>${myHero.name}</b> (${myHero.role}) is ready.<br>
+                        Connect other devices with room code <b>${roomCode}</b>. Tap start once assembled!
+                    `;
+                    renderHostStartControl();
+                });
             });
         }
 
+        // 2. PLAYER JOIN
         function joinAsPlayer() {
             const codeInput = document.getElementById('join-room-code').value.trim().toUpperCase();
             const nameInput = document.getElementById('player-hero-name').value.trim() || "Adventurer";
@@ -364,13 +414,16 @@
                 xp: 0
             };
 
+            // Immediate transition
+            switchScreen('screen-game');
+            document.getElementById('display-room-code').innerHTML = `<span id="net-status-dot" class="status-dot"></span> Room: ${codeInput}`;
+            document.getElementById('display-player-role').innerText = `${myHero.name} (${myHero.role})`;
+            renderHeroHUD();
+            document.getElementById('narrative-box').innerHTML = `<em>Connecting to room ${codeInput}...</em>`;
+
             connectBroker(() => {
                 mqttClient.subscribe(currentTopic, () => {
-                    switchScreen('screen-game');
-                    document.getElementById('display-room-code').innerText = `Room: ${codeInput}`;
-                    document.getElementById('display-player-role').innerText = `${myHero.name} (${myHero.role})`;
-                    renderHeroHUD();
-
+                    document.getElementById('narrative-box').innerHTML = `<em>Connected to room ${codeInput}. Awaiting adventure start...</em>`;
                     broadcastToAll({
                         type: 'JOIN_PARTY',
                         hero: myHero
@@ -387,6 +440,7 @@
             document.getElementById('stat-mod').innerText = `+${myHero.mod}`;
         }
 
+        // 3. UNIFIED NETWORK DISPATCHER
         function handleIncomingNetworkMessage(data) {
             if (isHost) {
                 if (data.type === 'JOIN_PARTY') {
@@ -415,6 +469,7 @@
             handlePlayerIncomingData(data);
         }
 
+        // 4. UI RECEIVER LOGIC
         function handlePlayerIncomingData(data) {
             const narrativeBox = document.getElementById('narrative-box');
             const choicesBox = document.getElementById('dynamic-choices');
@@ -475,6 +530,7 @@
             }
         }
 
+        // 5. PLAYER OUTGOING ACTIONS & ROLLS
         function selectAction(choice) {
             document.getElementById('dynamic-choices').innerHTML = '';
             document.getElementById('turn-notice').innerText = "Broadcasting choice...";
@@ -490,7 +546,7 @@
             d20Btn.disabled = true;
             d20Btn.classList.remove('ready-to-roll');
 
-            const naturalRoll = Math.floor(Math.random() * 20) + 1;[span_4](start_span)[span_4](end_span)
+            const naturalRoll = Math.floor(Math.random() * 20) + 1;[span_1](start_span)[span_1](end_span)
             const totalWithMod = naturalRoll + myHero.mod;
 
             document.getElementById('turn-notice').innerText = `Rolled ${naturalRoll} + ${myHero.mod} Mod = ${totalWithMod}! Resolving...`;
@@ -504,6 +560,7 @@
             });
         }
 
+        // 6. HOST AI RESOLUTION
         function renderHostStartControl() {
             const box = document.getElementById('dynamic-choices');
             box.innerHTML = `<button class="btn btn-green" onclick="startHostCampaign()">Start Adventure with Joined Heroes</button>`;
@@ -564,19 +621,19 @@ Describe the outcome. If this roll completes a key task or defeats a foe, set co
                 const response = await fetch(API_URL, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ contents: gameHistory })[span_5](start_span)[span_5](end_span)
+                    body: JSON.stringify({ contents: gameHistory })[span_2](start_span)[span_2](end_span)
                 });
 
-                const data = await response.json();[span_6](start_span)[span_6](end_span)
+                const data = await response.json();[span_3](start_span)[span_3](end_span)
                 if (data.error) {
                     throw new Error(data.error.message || "Gemini API rejected request");
                 }
 
-                const rawText = data.candidates[0].content.parts[0].text;[span_7](start_span)[span_7](end_span)
-                const cleanJson = rawText.replace(/```json/gi, "").replace(/```/g, "").trim();[span_8](start_span)[span_8](end_span)
-                const parsed = JSON.parse(cleanJson);[span_9](start_span)[span_9](end_span)
+                const rawText = data.candidates[0].content.parts[0].text;[span_4](start_span)[span_4](end_span)
+                const cleanJson = rawText.replace(/```json/gi, "").replace(/```/g, "").trim();[span_5](start_span)[span_5](end_span)
+                const parsed = JSON.parse(cleanJson);[span_6](start_span)[span_6](end_span)
 
-                gameHistory.push({ role: "model", parts: [{ text: rawText }] });[span_10](start_span)[span_10](end_span)
+                gameHistory.push({ role: "model", parts: [{ text: rawText }] });[span_7](start_span)[span_7](end_span)
 
                 if (parsed.completedTask && parsed.levelUpHero && parsed.levelUpHero !== "NONE") {
                     broadcastToAll({
