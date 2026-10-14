@@ -4,10 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>D&D Mobile Storyteller - Live Party</title>
-    <!-- MQTT over WebSockets -->
+    <!-- MQTT over WebSockets for State & Voice Signaling -->
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
-    <!-- Embedded Party Voice API -->
-    <script src="https://meet.jit.si/external_api.js"></script>
     <style>
         :root {
             --bg-color: #1a1a1a;
@@ -102,15 +100,7 @@
             padding: 6px 10px;
             margin-bottom: 8px;
             gap: 6px;
-        }
-
-        #voice-container {
-            display: none;
-            height: 180px;
-            margin-bottom: 8px;
-            border-radius: 6px;
-            overflow: hidden;
-            border: 1px solid #444;
+            flex-wrap: wrap;
         }
 
         .btn {
@@ -302,12 +292,12 @@
             <span class="badge" id="display-player-role">Connecting...</span>
         </div>
 
-        <!-- Integrated Utility Bar (Voice & Save) -->
+        <!-- Integrated Utility Bar (Narration Toggle, Native Mic & Save) -->
         <div class="utility-bar">
-            <button id="voice-btn" class="btn btn-green" style="padding:6px 12px; margin:0; font-size:0.8rem;" onclick="toggleVoiceCall()">🎙️ Join Voice</button>
-            <button id="save-btn" class="btn btn-blue" style="padding:6px 12px; margin:0; font-size:0.8rem; display:none;" onclick="manualSaveGame()">💾 Save Progress</button>
+            <button id="tts-toggle-btn" class="btn btn-green" style="padding:6px 10px; margin:0; font-size:0.8rem;" onclick="toggleNarrationAudio()">🔊 Narration: ON</button>
+            <button id="mic-toggle-btn" class="btn" style="padding:6px 10px; margin:0; font-size:0.8rem; background:#555;" onclick="toggleMicrophone()">🎙️ Mic: OFF</button>
+            <button id="save-btn" class="btn btn-blue" style="padding:6px 10px; margin:0; font-size:0.8rem; display:none;" onclick="manualSaveGame()">💾 Save</button>
         </div>
-        <div id="voice-container"></div>
 
         <div class="stat-banner" id="stats-banner">
             <div class="stat-box"><span class="stat-val" id="stat-hp">20</span><br>HP</div>
@@ -335,7 +325,7 @@
         var _kPart1 = "AQ.Ab8RN6KgzYEaRFx0";
         var _kPart2 = "_9S7ZIZZzIKZf-o8l8uZEWBH0u2BKo4I1A";
         var API_KEY = _kPart1 + _kPart2;
-        var API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=" + API_KEY;
+        var API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + API_KEY;
 
         var mqttClient = null;
         var isHost = false;
@@ -348,10 +338,27 @@
         var gameHistory = [];
         var activeGenre = "Medieval Fantasy";
 
-        var jitsiApi = null;
-        var voiceActive = false;
+        // Native Speech Synthesis Narration Toggle
+        var synth = window.speechSynthesis;[span_3](start_span)[span_3](end_span)
+        var narrationEnabled = true;
+
+        // Native WebRTC Audio Mesh variables
+        var localMediaStream = null;
+        var isMicActive = false;
+        var peerAudioConnections = {};
+        var myClientId = 'client_' + Math.random().toString(36).substring(2, 9);
+
+        var rtcConfiguration = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+            ]
+        };
 
         window.addEventListener('DOMContentLoaded', function() {
+            if (synth) {
+                synth.getVoices();[span_4](start_span)[span_4](end_span)
+            }
             checkExistingSave();
         });
 
@@ -369,6 +376,48 @@
                 if (isOnline) dot.classList.add('online');
                 else dot.classList.remove('online');
             }
+        }
+
+        // --- NARRATION SPEECH SYNTHESIS ENGINE ---
+        function toggleNarrationAudio() {
+            var btn = document.getElementById('tts-toggle-btn');
+            narrationEnabled = !narrationEnabled;
+
+            if (narrationEnabled) {
+                btn.innerText = "🔊 Narration: ON";
+                btn.className = "btn btn-green";
+                btn.style.backgroundColor = "var(--success-green)";
+                speakNarrative("Narration enabled.");
+            } else {
+                btn.innerText = "🔇 Narration: OFF";
+                btn.className = "btn";
+                btn.style.backgroundColor = "#555";
+                if (synth) synth.cancel();[span_5](start_span)[span_5](end_span)
+            }
+        }
+
+        function speakNarrative(textToSpeak) {
+            if (!synth || !narrationEnabled) return;[span_6](start_span)[span_6](end_span)
+
+            synth.cancel();[span_7](start_span)[span_7](end_span)
+            // Strip HTML tags for clean spoken pronunciation
+            var cleanText = textToSpeak.replace(/<[^>]*>?/gm, '').trim();
+            if (!cleanText) return;
+
+            var utterance = new SpeechSynthesisUtterance(cleanText);[span_8](start_span)[span_8](end_span)
+            utterance.lang = 'en-US';[span_9](start_span)[span_9](end_span)
+
+            var voices = synth.getVoices().filter(function(v) { return v.lang.startsWith('en'); });[span_10](start_span)[span_10](end_span)
+            var selectedVoice = voices.find(function(v) { 
+                return v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('en-GB'); 
+            });[span_11](start_span)[span_11](end_span)
+            if (!selectedVoice && voices.length > 0) selectedVoice = voices[0];[span_12](start_span)[span_12](end_span)
+            if (selectedVoice) utterance.voice = selectedVoice;[span_13](start_span)[span_13](end_span)
+
+            utterance.rate = 0.90;[span_14](start_span)[span_14](end_span)
+            utterance.pitch = 1.1;[span_15](start_span)[span_15](end_span)
+
+            synth.speak(utterance);[span_16](start_span)[span_16](end_span)
         }
 
         function checkExistingSave() {
@@ -410,7 +459,7 @@
         function connectBroker(onSuccess) {
             log("Connecting to relay...");
             mqttClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt', {
-                clientId: 'dnd_' + Math.random().toString(16).substr(2, 8),
+                clientId: myClientId,
                 connectTimeout: 6000,
                 reconnectPeriod: 2500
             });
@@ -426,7 +475,7 @@
                     var data = JSON.parse(message.toString());
                     handleIncomingNetworkMessage(data);
                 } catch (err) {
-                    console.error("Malformed message", err);
+                    console.error("Malformed packet", err);
                 }
             });
 
@@ -440,51 +489,127 @@
             });
         }
 
-        function toggleVoiceCall() {
-            var container = document.getElementById('voice-container');
-            var btn = document.getElementById('voice-btn');
+        // --- NATIVE ZERO-LOGIN AUDIO MESH ENGINE ---
+        async function toggleMicrophone() {
+            var btn = document.getElementById('mic-toggle-btn');
 
-            if (!voiceActive) {
-                container.style.display = 'block';
-                btn.innerText = 'Leave Voice';
-                btn.classList.remove('btn-green');
-                btn.style.backgroundColor = '#b33939';
+            if (!isMicActive) {
+                try {
+                    localMediaStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                    isMicActive = true;
+                    btn.innerText = "🎙️ Mic: LIVE";
+                    btn.style.backgroundColor = "var(--success-green)";
+                    
+                    Object.keys(peerAudioConnections).forEach(function(targetId) {
+                        var pc = peerAudioConnections[targetId];
+                        localMediaStream.getAudioTracks().forEach(function(track) {
+                            pc.addTrack(track, localMediaStream);
+                        });
+                        renegotiateAudioOffer(targetId);
+                    });
 
-                var domain = "meet.jit.si";
-                var options = {
-                    roomName: "DNDPartyRoom_" + currentRoomCode,
-                    width: "100%",
-                    height: "100%",
-                    parentNode: container,
-                    userInfo: {
-                        displayName: myHero.name + " (" + myHero.role + ")"
-                    },
-                    configOverwrite: {
-                        startWithAudioMuted: false,
-                        startWithVideoMuted: true,
-                        prejoinPageEnabled: false
-                    },
-                    interfaceConfigOverwrite: {
-                        TOOLBAR_BUTTONS: ['microphone', 'camera', 'hangup']
-                    }
-                };
-
-                jitsiApi = new JitsiMeetExternalAPI(domain, options);
-                voiceActive = true;
-            } else {
-                if (jitsiApi) {
-                    jitsiApi.dispose();
-                    jitsiApi = null;
+                    log("Microphone active.");
+                } catch (err) {
+                    alert("Could not access microphone: " + err.message);
                 }
-                container.style.display = 'none';
-                btn.innerText = '🎙️ Join Voice';
-                btn.style.backgroundColor = '';
-                btn.classList.add('btn-green');
-                voiceActive = false;
+            } else {
+                if (localMediaStream) {
+                    localMediaStream.getTracks().forEach(function(track) { track.stop(); });
+                    localMediaStream = null;
+                }
+                isMicActive = false;
+                btn.innerText = "🎙️ Mic: OFF";
+                btn.style.backgroundColor = "#555";
+                log("Microphone muted.");
             }
         }
 
-        // 1. HOST SETUP (NEW GAME)
+        function setupAudioPeer(targetId, isInitiator) {
+            if (peerAudioConnections[targetId]) return peerAudioConnections[targetId];
+
+            var pc = new RTCPeerConnection(rtcConfiguration);
+            peerAudioConnections[targetId] = pc;
+
+            if (localMediaStream) {
+                localMediaStream.getAudioTracks().forEach(function(track) {
+                    pc.addTrack(track, localMediaStream);
+                });
+            }
+
+            pc.onicecandidate = function(event) {
+                if (event.candidate) {
+                    broadcastToAll({
+                        type: 'VOICE_SIGNAL',
+                        senderId: myClientId,
+                        targetId: targetId,
+                        signalType: 'candidate',
+                        candidate: event.candidate
+                    });
+                }
+            };
+
+            pc.ontrack = function(event) {
+                var remoteAudio = document.getElementById('audio_player_' + targetId);
+                if (!remoteAudio) {
+                    remoteAudio = document.createElement('audio');
+                    remoteAudio.id = 'audio_player_' + targetId;
+                    remoteAudio.autoplay = true;
+                    document.body.appendChild(remoteAudio);
+                }
+                remoteAudio.srcObject = event.streams[0];
+            };
+
+            if (isInitiator) {
+                renegotiateAudioOffer(targetId);
+            }
+
+            return pc;
+        }
+
+        async function renegotiateAudioOffer(targetId) {
+            var pc = peerAudioConnections[targetId];
+            if (!pc) return;
+            try {
+                var offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+                broadcastToAll({
+                    type: 'VOICE_SIGNAL',
+                    senderId: myClientId,
+                    targetId: targetId,
+                    signalType: 'offer',
+                    sdp: pc.localDescription
+                });
+            } catch (e) {
+                console.error("Audio offer error", e);
+            }
+        }
+
+        async function handleVoiceSignaling(data) {
+            if (data.targetId !== myClientId) return;
+
+            var pc = peerAudioConnections[data.senderId] || setupAudioPeer(data.senderId, false);
+
+            if (data.signalType === 'offer') {
+                await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+                var answer = await pc.createAnswer();
+                await pc.setLocalDescription(answer);
+                broadcastToAll({
+                    type: 'VOICE_SIGNAL',
+                    senderId: myClientId,
+                    targetId: data.senderId,
+                    signalType: 'answer',
+                    sdp: pc.localDescription
+                });
+            } else if (data.signalType === 'answer') {
+                await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+            } else if (data.signalType === 'candidate') {
+                try {
+                    await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+                } catch (e) {}
+            }
+        }
+
+        // --- 1. HOST SETUP (NEW GAME) ---
         function setupHost() {
             try {
                 currentRoomCode = generateCode(4);
@@ -495,7 +620,7 @@
                 var hostRole = document.getElementById('host-hero-role').value;
 
                 myHero = {
-                    id: 'hero_' + Math.random().toString(36).substring(2, 9),
+                    id: myClientId,
                     name: hostName,
                     role: hostRole,
                     level: 1,
@@ -516,7 +641,7 @@
             }
         }
 
-        // 2. HOST RESUME GAME
+        // --- 2. HOST RESUME GAME ---
         function resumeSavedGame() {
             var savedData = localStorage.getItem('dnd_multiplayer_save');
             if (!savedData) return;
@@ -528,8 +653,8 @@
             party = parsed.party;
             gameHistory = parsed.history;
 
-            // Host takes first hero in the saved roster
             myHero = party[0];
+            myHero.id = myClientId;
 
             startHostSession(true, parsed.narrative);
         }
@@ -560,18 +685,20 @@
                         
                         var box = document.getElementById('dynamic-choices');
                         box.innerHTML = '<button class="btn btn-green" onclick="broadcastResumeAdventure()">All Heroes Rejoined: Continue Quest</button>';
+                        speakNarrative("Campaign resumed. Awaiting party rejoin.");
                     } else {
                         document.getElementById('narrative-box').innerHTML = 
                             '<b>Room Code: ' + currentRoomCode + '</b><br>' +
                             '⚔️ <b>' + myHero.name + '</b> (' + myHero.role + ') is ready.<br>' +
                             'Have other devices enter room code <b>' + currentRoomCode + '</b> and tap Join!';
                         renderHostStartControl();
+                        speakNarrative("Room created. Room code is " + currentRoomCode.split('').join(' '));
                     }
                 });
             });
         }
 
-        // 3. PLAYER JOIN
+        // --- 3. PLAYER JOIN ---
         function joinAsPlayer() {
             try {
                 var codeInput = document.getElementById('join-room-code').value.trim().toUpperCase();
@@ -587,7 +714,7 @@
                 currentTopic = 'dnd-game-room/' + currentRoomCode;
 
                 myHero = {
-                    id: 'hero_' + Math.random().toString(36).substring(2, 9),
+                    id: myClientId,
                     name: nameInput,
                     role: roleInput,
                     level: 1,
@@ -613,6 +740,8 @@
                             type: 'JOIN_PARTY',
                             hero: myHero
                         });
+
+                        speakNarrative("Connected to room " + codeInput + ". Waiting for adventure start.");
                     });
                 });
 
@@ -630,14 +759,20 @@
             document.getElementById('stat-mod').innerText = '+' + myHero.mod;
         }
 
-        // 4. NETWORK MESSAGE DISPATCHER
+        // --- 4. NETWORK DISPATCHER ---
         function handleIncomingNetworkMessage(data) {
+            if (data.type === 'VOICE_SIGNAL') {
+                handleVoiceSignaling(data);
+                return;
+            }
+
             if (isHost) {
                 if (data.type === 'JOIN_PARTY') {
-                    // Check if player matches a saved hero slot to restore stats
+                    setupAudioPeer(data.hero.id, true);
+
                     var existingIdx = party.findIndex(function(p) { return p.name.toLowerCase() === data.hero.name.toLowerCase(); });
                     if (existingIdx !== -1) {
-                        party[existingIdx].id = data.hero.id; // Refresh active network id
+                        party[existingIdx].id = data.hero.id;
                         broadcastToAll({
                             type: 'RESTORE_HERO_STATS',
                             hero: party[existingIdx]
@@ -673,7 +808,7 @@
             handlePlayerIncomingData(data);
         }
 
-        // 5. PLAYER UI RECEIVER
+        // --- 5. PLAYER UI RECEIVER ---
         function handlePlayerIncomingData(data) {
             var narrativeBox = document.getElementById('narrative-box');
             var choicesBox = document.getElementById('dynamic-choices');
@@ -683,6 +818,7 @@
             if (data.type === 'SYSTEM_MSG') {
                 narrativeBox.innerHTML += '<br>' + data.text;
                 narrativeBox.scrollTop = narrativeBox.scrollHeight;
+                speakNarrative(data.text);
             } 
             else if (data.type === 'RESTORE_HERO_STATS') {
                 if (myHero && myHero.name.toLowerCase() === data.hero.name.toLowerCase()) {
@@ -703,6 +839,7 @@
                         '🌟 LEVEL UP! ' + myHero.name + ' reached Level ' + myHero.level + '! HP & Modifier increased!' +
                         '</div>';
                     narrativeBox.scrollTop = narrativeBox.scrollHeight;
+                    speakNarrative("Level up! " + myHero.name + " reached level " + myHero.level);
                 }
             }
             else if (data.type === 'SCENE_UPDATE') {
@@ -720,8 +857,10 @@
                         btn.onclick = function() { selectAction(choice); };
                         choicesBox.appendChild(btn);
                     });
+                    speakNarrative(data.narrative + ". It is your turn to act.");
                 } else {
                     turnNotice.innerText = 'Waiting for ' + data.targetHero + ' to act...';
+                    speakNarrative(data.narrative + ". Waiting for " + data.targetHero + " to act.");
                 }
             } 
             else if (data.type === 'PROMPT_ROLL') {
@@ -731,6 +870,7 @@
                     d20Btn.disabled = false;
                     d20Btn.classList.add('ready-to-roll');
                     pendingActionText = data.actionText;
+                    speakNarrative("You selected " + data.actionText + ". Roll your d20.");[span_17](start_span)[span_17](end_span)
                 } else {
                     turnNotice.innerText = data.targetHero + ' is rolling the d20...';
                     d20Btn.disabled = true;
@@ -739,7 +879,7 @@
             }
         }
 
-        // 6. PLAYER ACTIONS & ROLLS
+        // --- 6. PLAYER ACTIONS & ROLLS ---
         function selectAction(choice) {
             document.getElementById('dynamic-choices').innerHTML = '';
             document.getElementById('turn-notice').innerText = 'Broadcasting choice...';
@@ -756,10 +896,12 @@
             d20Btn.disabled = true;
             d20Btn.classList.remove('ready-to-roll');
 
-            var naturalRoll = Math.floor(Math.random() * 20) + 1;
+            var naturalRoll = Math.floor(Math.random() * 20) + 1;[span_18](start_span)[span_18](end_span)
             var totalWithMod = naturalRoll + myHero.mod;
 
             document.getElementById('turn-notice').innerText = 'Rolled ' + naturalRoll + ' + ' + myHero.mod + ' Mod = ' + totalWithMod + '! Resolving...';
+
+            speakNarrative("You rolled a " + naturalRoll + "!");[span_19](start_span)[span_19](end_span)
 
             broadcastToAll({
                 type: 'PLAYER_ROLLED',
@@ -770,7 +912,7 @@
             });
         }
 
-        // 7. HOST AI ENGINE
+        // --- 7. HOST AI ENGINE ---
         function renderHostStartControl() {
             var box = document.getElementById('dynamic-choices');
             box.innerHTML = '<button class="btn btn-green" onclick="startHostCampaign()">Start Adventure with Joined Heroes</button>';
@@ -868,7 +1010,6 @@
                     choices: parsed.choices || []
                 });
 
-                // Auto-save on every successful scene progression
                 saveGameState();
 
             } catch (err) {
