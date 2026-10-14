@@ -294,8 +294,18 @@
     </div>
 
     <script>
-        const API_KEY = "AQ.Ab8RN6KoxBba0uWyWBCSI-fGnGOKhEEV_irReIBDXiliaLlLJg";[span_0](start_span)[span_0](end_span)
-        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
+        var peerConfig = {
+            config: {
+                iceServers: [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun1.l.google.com:19302' },
+                    { urls: 'stun:stun2.l.google.com:19302' }
+                ]
+            }
+        };
+
+        var API_KEY = "AQ.Ab8RN6KoxBba0uWyWBCSI-fGnGOKhEEV_irReIBDXiliaLlLJg";[span_2](start_span)[span_2](end_span)
+        var API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + API_KEY;
 
         var peer = null;
         var isHost = false;
@@ -310,36 +320,26 @@
 
         function log(msg) {
             console.log(msg);
-            const d1 = document.getElementById('debug-log');
-            const d2 = document.getElementById('debug-log-game');
+            var d1 = document.getElementById('debug-log');
+            var d2 = document.getElementById('debug-log-game');
             if (d1) d1.innerText = msg;
             if (d2) d2.innerText = msg;
         }
 
         function setStatusOnline(isOnline) {
-            const dot = document.getElementById('net-status-dot');
+            var dot = document.getElementById('net-status-dot');
             if (dot) {
                 if (isOnline) dot.classList.add('online');
                 else dot.classList.remove('online');
             }
         }
 
-        const peerConfig = {
-            config: {
-                iceServers: [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:stun1.l.google.com:19302' },
-                    { urls: 'stun:stun2.l.google.com:19302' }
-                ]
-            }
-        };
-
         // 1. HOST SETUP
         function setupHost() {
             try {
                 currentRoomCode = generateCode(4);
-                const hostName = document.getElementById('host-hero-name').value.trim() || "Party Leader";
-                const hostRole = document.getElementById('host-hero-role').value;
+                var hostName = document.getElementById('host-hero-name').value.trim() || "Party Leader";
+                var hostRole = document.getElementById('host-hero-role').value;
 
                 myHero = {
                     id: 'hero_' + Math.random().toString(36).substring(2, 9),
@@ -356,32 +356,31 @@
                 party = [myHero];
 
                 switchScreen('screen-game');
-                document.getElementById('display-room-code').innerHTML = `<span id="net-status-dot" class="status-dot"></span> Room: ${currentRoomCode}`;
-                document.getElementById('display-player-role').innerText = `${myHero.name} (${myHero.role}) [Host]`;
+                document.getElementById('display-room-code').innerHTML = '<span id="net-status-dot" class="status-dot"></span> Room: ' + currentRoomCode;
+                document.getElementById('display-player-role').innerText = myHero.name + ' (' + myHero.role + ') [Host]';
                 renderHeroHUD();
 
-                log(`Initializing host node: dnd-realm-${currentRoomCode}...`);
+                log('Initializing host: dnd-realm-' + currentRoomCode);
 
-                peer = new Peer("dnd-realm-" + currentRoomCode, peerConfig);
+                peer = new Peer('dnd-realm-' + currentRoomCode, peerConfig);
 
                 peer.on('open', function(id) {
                     isHost = true;
                     setStatusOnline(true);
-                    log(`Host active! Code: ${currentRoomCode}`);
-                    document.getElementById('narrative-box').innerHTML = `
-                        <b>Room Code: ${currentRoomCode}</b><br>
-                        ⚔️ <b>${myHero.name}</b> (${myHero.role}) is ready.<br>
-                        Have other devices enter room code <b>${currentRoomCode}</b> and tap Join!
-                    `;
+                    log('Host active! Code: ' + currentRoomCode);
+                    document.getElementById('narrative-box').innerHTML = 
+                        '<b>Room Code: ' + currentRoomCode + '</b><br>' +
+                        '⚔️ <b>' + myHero.name + '</b> (' + myHero.role + ') is ready.<br>' +
+                        'Have other devices enter room code <b>' + currentRoomCode + '</b> and tap Join!';
                     renderHostStartControl();
                 });
 
                 peer.on('connection', function(conn) {
-                    log(`Incoming connection detected...`);
+                    log('Incoming connection detected...');
                     connections.push(conn);
 
                     conn.on('open', function() {
-                        log(`Player connected!`);
+                        log('Player connected!');
                     });
 
                     conn.on('data', function(data) {
@@ -394,28 +393,28 @@
                 });
 
                 peer.on('error', function(err) {
-                    log(`Host peer error: ${err.type}`);
+                    log('Host peer error: ' + err.type);
                     if (err.type === 'unavailable-id') {
-                        alert("Room code collision! Click Host & Play again.");
+                        alert('Room code collision! Click Host & Play again.');
                         switchScreen('screen-lobby');
                     }
                 });
 
             } catch (e) {
-                alert("Host startup failed: " + e.message);
-                log("Error: " + e.message);
+                alert('Host startup failed: ' + e.message);
+                log('Error: ' + e.message);
             }
         }
 
         // 2. PLAYER JOIN
         function joinAsPlayer() {
             try {
-                const codeInput = document.getElementById('join-room-code').value.trim().toUpperCase();
-                const nameInput = document.getElementById('player-hero-name').value.trim() || "Adventurer";
-                const roleInput = document.getElementById('player-hero-role').value;
+                var codeInput = document.getElementById('join-room-code').value.trim().toUpperCase();
+                var nameInput = document.getElementById('player-hero-name').value.trim() || "Adventurer";
+                var roleInput = document.getElementById('player-hero-role').value;
 
                 if (codeInput.length !== 4) {
-                    alert("Please enter a valid 4-letter room code.");
+                    alert('Please enter a valid 4-letter room code.');
                     return;
                 }
 
@@ -434,22 +433,22 @@
                 };
 
                 switchScreen('screen-game');
-                document.getElementById('display-room-code').innerHTML = `<span id="net-status-dot" class="status-dot"></span> Room: ${codeInput}`;
-                document.getElementById('display-player-role').innerText = `${myHero.name} (${myHero.role})`;
+                document.getElementById('display-room-code').innerHTML = '<span id="net-status-dot" class="status-dot"></span> Room: ' + codeInput;
+                document.getElementById('display-player-role').innerText = myHero.name + ' (' + myHero.role + ')';
                 renderHeroHUD();
-                document.getElementById('narrative-box').innerHTML = `<em>Contacting host room ${codeInput}...</em>`;
+                document.getElementById('narrative-box').innerHTML = '<em>Contacting host room ' + codeInput + '...</em>';
 
-                log("Connecting to host...");
+                log('Connecting to host...');
                 peer = new Peer(peerConfig);
 
                 peer.on('open', function() {
-                    const targetHostId = "dnd-realm-" + codeInput;
+                    var targetHostId = 'dnd-realm-' + codeInput;
                     hostConn = peer.connect(targetHostId, { reliable: true });
 
                     hostConn.on('open', function() {
                         setStatusOnline(true);
-                        log("Connected to Host successfully!");
-                        document.getElementById('narrative-box').innerHTML = `<em>Connected to room ${codeInput}! Waiting for Host to start the adventure...</em>`;
+                        log('Connected to Host successfully!');
+                        document.getElementById('narrative-box').innerHTML = '<em>Connected to room ' + codeInput + '! Waiting for Host to start the adventure...</em>';
 
                         hostConn.send({
                             type: 'JOIN_PARTY',
@@ -463,38 +462,38 @@
 
                     hostConn.on('close', function() {
                         setStatusOnline(false);
-                        log("Disconnected from Host.");
+                        log('Disconnected from Host.');
                     });
                 });
 
                 peer.on('error', function(err) {
-                    log(`Peer client error: ${err.type}`);
-                    alert(`Could not connect to room ${codeInput}. Verify the room code.`);
+                    log('Peer client error: ' + err.type);
+                    alert('Could not connect to room ' + codeInput + '. Verify the room code.');
                 });
 
             } catch (e) {
-                alert("Join error: " + e.message);
-                log("Error: " + e.message);
+                alert('Join error: ' + e.message);
+                log('Error: ' + e.message);
             }
         }
 
         function renderHeroHUD() {
             if (!myHero) return;
-            document.getElementById('stat-hp').innerText = `${myHero.hp}/${myHero.maxHp}`;
+            document.getElementById('stat-hp').innerText = myHero.hp + '/' + myHero.maxHp;
             document.getElementById('stat-ac').innerText = myHero.ac;
             document.getElementById('stat-lvl').innerText = myHero.level;
-            document.getElementById('stat-mod').innerText = `+${myHero.mod}`;
+            document.getElementById('stat-mod').innerText = '+' + myHero.mod;
         }
 
         // 3. HOST DISPATCHER
         function handleIncomingNetworkMessage(data, senderConn) {
-            log(`Host received: ${data.type}`);
+            log('Host received: ' + data.type);
             if (data.type === 'JOIN_PARTY') {
                 if (!party.some(function(p) { return p.id === data.hero.id; })) {
                     party.push(data.hero);
                     broadcastToAll({
                         type: 'SYSTEM_MSG',
-                        text: `⚔️ <b>${data.hero.name}</b> the ${data.hero.role} has entered the realm!`
+                        text: '⚔️ <b>' + data.hero.name + '</b> the ' + data.hero.role + ' has entered the realm!'
                     });
                 }
             } else if (data.type === 'PLAYER_ACTION_CHOSEN') {
@@ -506,7 +505,7 @@
             } else if (data.type === 'PLAYER_ROLLED') {
                 broadcastToAll({
                     type: 'SYSTEM_MSG',
-                    text: `🎲 <b>${data.heroName}</b> rolled a <b>${data.roll}</b> (Total with Mod: <b>${data.total}</b>) for: "${data.actionText}"!`
+                    text: '🎲 <b>' + data.heroName + '</b> rolled a <b>' + data.roll + '</b> (Total: <b>' + data.total + '</b>) for: "' + data.actionText + '"!'
                 });
                 triggerGeminiResolution(data.heroName, data.actionText, data.roll, data.total);
             }
@@ -514,28 +513,27 @@
 
         // 4. PLAYER UI RECEIVER
         function handlePlayerIncomingData(data) {
-            const narrativeBox = document.getElementById('narrative-box');
-            const choicesBox = document.getElementById('dynamic-choices');
-            const turnNotice = document.getElementById('turn-notice');
-            const d20Btn = document.getElementById('d20-btn');
+            var narrativeBox = document.getElementById('narrative-box');
+            var choicesBox = document.getElementById('dynamic-choices');
+            var turnNotice = document.getElementById('turn-notice');
+            var d20Btn = document.getElementById('d20-btn');
 
             if (data.type === 'SYSTEM_MSG') {
-                narrativeBox.innerHTML += `<br>${data.text}`;
+                narrativeBox.innerHTML += '<br>' + data.text;
                 narrativeBox.scrollTop = narrativeBox.scrollHeight;
             } 
             else if (data.type === 'LEVEL_UP') {
-                if (myHero && (data.targetHero === myHero.name || data.targetHero === "ALL")) {
+                if (myHero && (data.targetHero === myHero.name || data.targetHero === 'ALL')) {
                     myHero.level += 1;
                     myHero.maxHp += 5;
                     myHero.hp = myHero.maxHp;
                     myHero.mod += 1;
                     renderHeroHUD();
 
-                    narrativeBox.innerHTML += `
-                        <div class="levelup-banner">
-                            🌟 LEVEL UP! ${myHero.name} reached Level ${myHero.level}! HP & Modifier increased!
-                        </div>
-                    `;
+                    narrativeBox.innerHTML += 
+                        '<div class="levelup-banner">' +
+                        '🌟 LEVEL UP! ' + myHero.name + ' reached Level ' + myHero.level + '! HP & Modifier increased!' +
+                        '</div>';
                     narrativeBox.scrollTop = narrativeBox.scrollHeight;
                 }
             }
@@ -545,28 +543,28 @@
                 d20Btn.disabled = true;
                 d20Btn.classList.remove('ready-to-roll');
 
-                if (myHero && (data.targetHero === "ALL" || data.targetHero === myHero.name)) {
-                    turnNotice.innerText = "Your turn! Select your action:";
+                if (myHero && (data.targetHero === 'ALL' || data.targetHero === myHero.name)) {
+                    turnNotice.innerText = 'Your turn! Select your action:';
                     data.choices.forEach(function(choice) {
-                        const btn = document.createElement('button');
+                        var btn = document.createElement('button');
                         btn.className = 'btn';
                         btn.innerText = choice;
                         btn.onclick = function() { selectAction(choice); };
                         choicesBox.appendChild(btn);
                     });
                 } else {
-                    turnNotice.innerText = `Waiting for ${data.targetHero} to act...`;
+                    turnNotice.innerText = 'Waiting for ' + data.targetHero + ' to act...';
                 }
             } 
             else if (data.type === 'PROMPT_ROLL') {
                 choicesBox.innerHTML = '';
                 if (myHero && data.targetHero === myHero.name) {
-                    turnNotice.innerText = `Your check! Tap your glowing d20.`;
+                    turnNotice.innerText = 'Your check! Tap your glowing d20.';
                     d20Btn.disabled = false;
                     d20Btn.classList.add('ready-to-roll');
                     pendingActionText = data.actionText;
                 } else {
-                    turnNotice.innerText = `${data.targetHero} is rolling the d20...`;
+                    turnNotice.innerText = data.targetHero + ' is rolling the d20...';
                     d20Btn.disabled = true;
                     d20Btn.classList.remove('ready-to-roll');
                 }
@@ -576,9 +574,9 @@
         // 5. PLAYER OUTGOING ACTIONS
         function selectAction(choice) {
             document.getElementById('dynamic-choices').innerHTML = '';
-            document.getElementById('turn-notice').innerText = "Broadcasting choice...";
+            document.getElementById('turn-notice').innerText = 'Broadcasting choice...';
             
-            const payload = {
+            var payload = {
                 type: 'PLAYER_ACTION_CHOSEN',
                 heroName: myHero.name,
                 actionText: choice
@@ -592,16 +590,16 @@
         }
 
         function handleD20Roll() {
-            const d20Btn = document.getElementById('d20-btn');
+            var d20Btn = document.getElementById('d20-btn');
             d20Btn.disabled = true;
             d20Btn.classList.remove('ready-to-roll');
 
-            const naturalRoll = Math.floor(Math.random() * 20) + 1;[span_1](start_span)[span_1](end_span)
-            const totalWithMod = naturalRoll + myHero.mod;
+            var naturalRoll = Math.floor(Math.random() * 20) + 1;[span_3](start_span)[span_3](end_span)
+            var totalWithMod = naturalRoll + myHero.mod;
 
-            document.getElementById('turn-notice').innerText = `Rolled ${naturalRoll} + ${myHero.mod} Mod = ${totalWithMod}! Resolving...`;
+            document.getElementById('turn-notice').innerText = 'Rolled ' + naturalRoll + ' + ' + myHero.mod + ' Mod = ' + totalWithMod + '! Resolving...';
 
-            const payload = {
+            var payload = {
                 type: 'PLAYER_ROLLED',
                 heroName: myHero.name,
                 actionText: pendingActionText,
@@ -618,32 +616,32 @@
 
         // 6. HOST AI RESOLUTION
         function renderHostStartControl() {
-            const box = document.getElementById('dynamic-choices');
-            box.innerHTML = `<button class="btn btn-green" onclick="startHostCampaign()">Start Adventure with Joined Heroes</button>`;
+            var box = document.getElementById('dynamic-choices');
+            box.innerHTML = '<button class="btn btn-green" onclick="startHostCampaign()">Start Adventure with Joined Heroes</button>';
         }
 
         async function startHostCampaign() {
             if (party.length === 0) {
-                alert("Wait for heroes to join.");
+                alert('Wait for heroes to join.');
                 return;
             }
-            const genre = document.getElementById('host-genre').value;
-            const partyRoster = party.map(function(p) { return `${p.name} (Level ${p.level} ${p.role})`; }).join(', ');
+            var genre = document.getElementById('host-genre').value;
+            var partyRoster = party.map(function(p) { return p.name + ' (Level ' + p.level + ' ' + p.role + ')'; }).join(', ');
 
             gameHistory = [
                 {
                     role: "user",
                     parts: [{
-                        text: `You are the DM running a ${genre} campaign for: ${partyRoster}.
-Format ALL responses strictly as valid JSON with NO markdown code fences or extra text:
-{
-  "narrative": "scene description",
-  "targetHero": "specific hero name whose turn it is to act, or ALL",
-  "choices": ["Option 1", "Option 2", "Option 3"],
-  "completedTask": false,
-  "levelUpHero": "NONE"
-}
-When an action or battle completes a distinct challenge, set "completedTask": true and set "levelUpHero" to that hero's name (or ALL).`
+                        text: 'You are the DM running a ' + genre + ' campaign for: ' + partyRoster + '.\n' +
+'Format ALL responses strictly as valid JSON with NO markdown code fences or extra text:\n' +
+'{\n' +
+'  "narrative": "scene description",\n' +
+'  "targetHero": "specific hero name whose turn it is to act, or ALL",\n' +
+'  "choices": ["Option 1", "Option 2", "Option 3"],\n' +
+'  "completedTask": false,\n' +
+'  "levelUpHero": "NONE"\n' +
+'}\n' +
+'When an action or battle completes a distinct challenge, set "completedTask": true and set "levelUpHero" to that hero\'s name (or ALL).'
                     }]
                 },
                 {
@@ -664,9 +662,9 @@ When an action or battle completes a distinct challenge, set "completedTask": tr
             gameHistory.push({
                 role: "user",
                 parts: [{
-                    text: `[Turn Check] ${heroName} attempted: "${action}".
-Natural d20 Roll: ${naturalRoll}, Total with Modifier: ${total}.
-Describe the outcome. If this roll completes a key task or defeats a foe, set completedTask: true and levelUpHero: "${heroName}". Designate who acts next.`
+                    text: '[Turn Check] ' + heroName + ' attempted: "' + action + '".\n' +
+'Natural d20 Roll: ' + naturalRoll + ', Total with Modifier: ' + total + '.\n' +
+'Describe the outcome. If this roll completes a key task or defeats a foe, set completedTask: true and levelUpHero: "' + heroName + '". Designate who acts next.'
                 }]
             });
             fetchAndBroadcastGemini();
@@ -674,25 +672,25 @@ Describe the outcome. If this roll completes a key task or defeats a foe, set co
 
         async function fetchAndBroadcastGemini() {
             try {
-                log("Querying Gemini DM...");
-                const response = await fetch(API_URL, {
+                log('Querying Gemini DM...');
+                var response = await fetch(API_URL, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ contents: gameHistory })[span_2](start_span)[span_2](end_span)
+                    body: JSON.stringify({ contents: gameHistory })[span_4](start_span)[span_4](end_span)
                 });
 
-                const data = await response.json();[span_3](start_span)[span_3](end_span)
+                var data = await response.json();[span_5](start_span)[span_5](end_span)
                 if (data.error) {
                     throw new Error(data.error.message || "Gemini API rejected request");
                 }
 
-                const rawText = data.candidates[0].content.parts[0].text;[span_4](start_span)[span_4](end_span)
-                const cleanJson = rawText.replace(/```json/gi, "").replace(/```/g, "").trim();[span_5](start_span)[span_5](end_span)
-                const parsed = JSON.parse(cleanJson);[span_6](start_span)[span_6](end_span)
+                var rawText = data.candidates[0].content.parts[0].text;[span_6](start_span)[span_6](end_span)
+                var cleanJson = rawText.replace(/```json/gi, "").replace(/```/g, "").trim();[span_7](start_span)[span_7](end_span)
+                var parsed = JSON.parse(cleanJson);[span_8](start_span)[span_8](end_span)
 
-                gameHistory.push({ role: "model", parts: [{ text: rawText }] });[span_7](start_span)[span_7](end_span)
+                gameHistory.push({ role: "model", parts: [{ text: rawText }] });[span_9](start_span)[span_9](end_span)
 
-                if (parsed.completedTask && parsed.levelUpHero && parsed.levelUpHero !== "NONE") {
+                if (parsed.completedTask && parsed.levelUpHero && parsed.levelUpHero !== 'NONE') {
                     broadcastToAll({
                         type: 'LEVEL_UP',
                         targetHero: parsed.levelUpHero
@@ -702,15 +700,15 @@ Describe the outcome. If this roll completes a key task or defeats a foe, set co
                 broadcastToAll({
                     type: 'SCENE_UPDATE',
                     narrative: parsed.narrative,
-                    targetHero: parsed.targetHero || "ALL",
+                    targetHero: parsed.targetHero || 'ALL',
                     choices: parsed.choices || []
                 });
 
             } catch (err) {
-                log(`Gemini error: ${err.message}`);
+                log('Gemini error: ' + err.message);
                 broadcastToAll({
                     type: 'SYSTEM_MSG',
-                    text: `⚠️ DM communication interrupted: ${err.message}`
+                    text: '⚠️ DM communication interrupted: ' + err.message
                 });
             }
         }
@@ -724,14 +722,14 @@ Describe the outcome. If this roll completes a key task or defeats a foe, set co
 
         function switchScreen(screenId) {
             document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
-            const target = document.getElementById(screenId);
+            var target = document.getElementById(screenId);
             if (target) target.classList.add('active');
         }
 
         function generateCode(length) {
-            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-            let res = '';
-            for (let i = 0; i < length; i++) res += chars.charAt(Math.floor(Math.random() * chars.length));
+            var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            var res = '';
+            for (var i = 0; i < length; i++) res += chars.charAt(Math.floor(Math.random() * chars.length));
             return res;
         }
     </script>
