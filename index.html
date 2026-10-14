@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>D&D Mobile Storyteller - Live Party</title>
-    <!-- MQTT over WebSockets for firewall & cellular traversal -->
-    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <!-- PeerJS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <style>
         :root {
             --bg-color: #1a1a1a;
@@ -191,6 +191,18 @@
             margin-top: 8px;
             text-align: center;
         }
+
+        #debug-log {
+            font-size: 0.75rem;
+            color: #888;
+            font-family: monospace;
+            background: #111;
+            padding: 6px;
+            border-radius: 4px;
+            margin-top: 4px;
+            max-height: 60px;
+            overflow-y: auto;
+        }
     </style>
 </head>
 <body>
@@ -232,7 +244,7 @@
             <p style="font-size: 0.85rem; color:#aaa;">Connect your phone or tablet to play your hero.</p>
             <div class="input-group">
                 <label>Room Code (4 Letters)</label>
-                <input type="text" id="join-room-code" placeholder="e.g. DRGN" maxlength="4" style="text-transform: uppercase;">
+                <input type="text" id="join-room-code" placeholder="e.g. HERO" maxlength="4" style="text-transform: uppercase;">
             </div>
             <div class="input-group">
                 <label>Hero Name</label>
@@ -249,6 +261,7 @@
             </div>
             <button class="btn" onclick="joinAsPlayer()">Join Realm</button>
         </div>
+        <div id="debug-log">System initialized. Awaiting action.</div>
     </div>
 
     <!-- SCREEN 2: GAMEPLAY -->
@@ -277,21 +290,31 @@
             </div>
             <div id="turn-notice" class="waiting-text">Awaiting DM...</div>
         </div>
+        <div id="debug-log-game" style="font-size:0.7rem; color:#666; font-family:monospace; margin-top:4px;"></div>
     </div>
 
     <script>
         const API_KEY = "AQ.Ab8RN6KoxBba0uWyWBCSI-fGnGOKhEEV_irReIBDXiliaLlLJg";[span_0](start_span)[span_0](end_span)
         const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
 
-        let mqttClient = null;
+        let peer = null;
         let isHost = false;
         let roomCode = "";
-        let currentTopic = "";
+        let connections = []; // Host: array of client conns
+        let hostConn = null;   // Client: single connection to host
 
         let party = [];
         let myHero = null;
         let pendingActionText = "";
         let gameHistory = [];
+
+        function log(msg) {
+            console.log(msg);
+            const d1 = document.getElementById('debug-log');
+            const d2 = document.getElementById('debug-log-game');
+            if (d1) d1.innerText = msg;
+            if (d2) d2.innerText = msg;
+        }
 
         function setStatusOnline(isOnline) {
             const dot = document.getElementById('net-status-dot');
@@ -301,135 +324,166 @@
             }
         }
 
-        function connectBroker(onSuccess) {
-            const brokers = [
-                'wss://broker.hivemq.com:8884/mqtt',
-                'wss://broker.emqx.io:8084/mqtt'
-            ];
-            let currentBrokerIdx = 0;
-
-            function tryConnect() {
-                mqttClient = mqtt.connect(brokers[currentBrokerIdx], {
-                    connectTimeout: 5000,
-                    reconnectPeriod: 2500
-                });
-
-                mqttClient.on('connect', () => {
-                    console.log(`Connected to relay: ${brokers[currentBrokerIdx]}`);
-                    setStatusOnline(true);
-                    if (onSuccess) onSuccess();
-                });
-
-                mqttClient.on('message', (topic, message) => {
-                    try {
-                        const data = JSON.parse(message.toString());
-                        handleIncomingNetworkMessage(data);
-                    } catch (err) {
-                        console.error("Malformed packet:", err);
-                    }
-                });
-
-                mqttClient.on('error', (err) => {
-                    console.error("Broker connection error:", err);
-                    setStatusOnline(false);
-                });
-
-                mqttClient.on('offline', () => {
-                    setStatusOnline(false);
-                });
+        // Configure WebRTC with Google's public STUN servers for clean cellular/Wi-Fi NAT traversal
+        const peerConfig = {
+            config: {
+                iceServers: [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun1.l.google.com:19302' },
+                    { urls: 'stun:stun2.l.google.com:19302' }
+                ]
             }
-
-            tryConnect();
-        }
+        };
 
         // 1. HOST SETUP
         function setupHost() {
-            roomCode = generateCode(4);
-            currentTopic = `dnd-party-room/${roomCode}`;
+            try {
+                roomCode = generateCode(4);
+                const hostName = document.getElementById('host-hero-name').value.trim() || "Party Leader";
+                const hostRole = document.getElementById('host-hero-role').value;
 
-            const hostName = document.getElementById('host-hero-name').value.trim() || "Party Leader";
-            const hostRole = document.getElementById('host-hero-role').value;
+                myHero = {
+                    id: 'hero_' + Math.random().toString(36).substring(2, 9),
+                    name: hostName,
+                    role: hostRole,
+                    level: 1,
+                    hp: 20,
+                    maxHp: 20,
+                    ac: hostRole === "Warrior" ? 16 : 13,
+                    mod: 2,
+                    xp: 0
+                };
 
-            myHero = {
-                id: 'hero_' + Math.random().toString(36).substring(2, 9),
-                name: hostName,
-                role: hostRole,
-                level: 1,
-                hp: 20,
-                maxHp: 20,
-                ac: hostRole === "Warrior" ? 16 : 13,
-                mod: 2,
-                xp: 0
-            };
+                party = [myHero];
 
-            party = [myHero];
+                // Immediate UI Switch
+                switchScreen('screen-game');
+                document.getElementById('display-room-code').innerHTML = `<span id="net-status-dot" class="status-dot"></span> Room: ${roomCode}`;
+                document.getElementById('display-player-role').innerText = `${myHero.name} (${myHero.role}) [Host]`;
+                renderHeroHUD();
 
-            // Immediate transition
-            switchScreen('screen-game');
-            document.getElementById('display-room-code').innerHTML = `<span id="net-status-dot" class="status-dot"></span> Room: ${roomCode}`;
-            document.getElementById('display-player-role').innerText = `${myHero.name} (${myHero.role}) [Host]`;
-            renderHeroHUD();
+                log(`Initializing host node: dnd-realm-${roomCode}...`);
 
-            document.getElementById('narrative-box').innerHTML = `
-                <b>Room Code: ${roomCode}</b><br>
-                ⚔️ <b>${myHero.name}</b> (${myHero.role}) is ready.<br>
-                <em>Connecting to live session channel...</em>
-            `;
+                // Create custom peer ID based on Room Code
+                peer = new Peer("dnd-realm-" + roomCode, peerConfig);
 
-            connectBroker(() => {
-                mqttClient.subscribe(currentTopic, () => {
+                peer.on('open', (id) => {
+                    isHost = true;
+                    setStatusOnline(true);
+                    log(`Host active! Code: ${roomCode}`);
                     document.getElementById('narrative-box').innerHTML = `
                         <b>Room Code: ${roomCode}</b><br>
                         ⚔️ <b>${myHero.name}</b> (${myHero.role}) is ready.<br>
-                        Connect other devices with room code <b>${roomCode}</b>. Tap start once assembled!
+                        Have other devices enter room code <b>${roomCode}</b> and tap Join!
                     `;
                     renderHostStartControl();
                 });
-            });
+
+                peer.on('connection', (conn) => {
+                    log(`Incoming connection detected...`);
+                    connections.push(conn);
+
+                    conn.on('open', () => {
+                        log(`Player data channel open!`);
+                    });
+
+                    conn.on('data', (data) => {
+                        handleIncomingNetworkMessage(data, conn);
+                    });
+
+                    conn.on('close', () => {
+                        connections = connections.filter(c => c !== conn);
+                    });
+                });
+
+                peer.on('error', (err) => {
+                    log(`Host peer error: ${err.type}`);
+                    if (err.type === 'unavailable-id') {
+                        alert("Room code collision! Please click Host & Play again.");
+                        switchScreen('screen-lobby');
+                    }
+                });
+
+            } catch (e) {
+                alert("Host startup failed: " + e.message);
+                log("Error: " + e.message);
+            }
         }
 
         // 2. PLAYER JOIN
         function joinAsPlayer() {
-            const codeInput = document.getElementById('join-room-code').value.trim().toUpperCase();
-            const nameInput = document.getElementById('player-hero-name').value.trim() || "Adventurer";
-            const roleInput = document.getElementById('player-hero-role').value;
+            try {
+                const codeInput = document.getElementById('join-room-code').value.trim().toUpperCase();
+                const nameInput = document.getElementById('player-hero-name').value.trim() || "Adventurer";
+                const roleInput = document.getElementById('player-hero-role').value;
 
-            if (codeInput.length !== 4) {
-                alert("Please enter a valid 4-letter room code.");
-                return;
-            }
+                if (codeInput.length !== 4) {
+                    alert("Please enter a valid 4-letter room code.");
+                    return;
+                }
 
-            roomCode = codeInput;
-            currentTopic = `dnd-party-room/${roomCode}`;
+                roomCode = codeInput;
 
-            myHero = {
-                id: 'hero_' + Math.random().toString(36).substring(2, 9),
-                name: nameInput,
-                role: roleInput,
-                level: 1,
-                hp: 20,
-                maxHp: 20,
-                ac: roleInput === "Warrior" ? 16 : 13,
-                mod: 2,
-                xp: 0
-            };
+                myHero = {
+                    id: 'hero_' + Math.random().toString(36).substring(2, 9),
+                    name: nameInput,
+                    role: roleInput,
+                    level: 1,
+                    hp: 20,
+                    maxHp: 20,
+                    ac: roleInput === "Warrior" ? 16 : 13,
+                    mod: 2,
+                    xp: 0
+                };
 
-            // Immediate transition
-            switchScreen('screen-game');
-            document.getElementById('display-room-code').innerHTML = `<span id="net-status-dot" class="status-dot"></span> Room: ${codeInput}`;
-            document.getElementById('display-player-role').innerText = `${myHero.name} (${myHero.role})`;
-            renderHeroHUD();
-            document.getElementById('narrative-box').innerHTML = `<em>Connecting to room ${codeInput}...</em>`;
+                // Immediate UI Switch
+                switchScreen('screen-game');
+                document.getElementById('display-room-code').innerHTML = `<span id="net-status-dot" class="status-dot"></span> Room: ${codeInput}`;
+                document.getElementById('display-player-role').innerText = `${myHero.name} (${myHero.role})`;
+                renderHeroHUD();
+                document.getElementById('narrative-box').innerHTML = `<em>Contacting host room ${codeInput}...</em>`;
 
-            connectBroker(() => {
-                mqttClient.subscribe(currentTopic, () => {
-                    document.getElementById('narrative-box').innerHTML = `<em>Connected to room ${codeInput}. Awaiting adventure start...</em>`;
-                    broadcastToAll({
-                        type: 'JOIN_PARTY',
-                        hero: myHero
+                log("Connecting to host...");
+                peer = new Peer(peerConfig);
+
+                peer.on('open', () => {
+                    const targetHostId = "dnd-realm-" + codeInput;
+                    hostConn = peer.connect(targetHostId, { reliable: true });
+
+                    hostConn.on('open', () => {
+                        setStatusOnline(true);
+                        log("Connected to Host successfully!");
+                        document.getElementById('narrative-box').innerHTML = `<em>Connected to room ${codeInput}! Waiting for Host to start the adventure...</em>`;
+
+                        hostConn.send({
+                            type: 'JOIN_PARTY',
+                            hero: myHero
+                        });
+                    });
+
+                    hostConn.on('data', (data) => {
+                        handlePlayerIncomingData(data);
+                    });
+
+                    hostConn.on('close', () => {
+                        setStatusOnline(false);
+                        log("Disconnected from Host.");
+                    });
+
+                    hostConn.on('error', (err) => {
+                        log(`Channel error: ${err}`);
                     });
                 });
-            });
+
+                peer.on('error', (err) => {
+                    log(`Peer client error: ${err.type}`);
+                    alert(`Could not connect to room ${codeInput}. Verify the room code.`);
+                });
+
+            } catch (e) {
+                alert("Join error: " + e.message);
+                log("Error: " + e.message);
+            }
         }
 
         function renderHeroHUD() {
@@ -440,36 +494,33 @@
             document.getElementById('stat-mod').innerText = `+${myHero.mod}`;
         }
 
-        // 3. UNIFIED NETWORK DISPATCHER
-        function handleIncomingNetworkMessage(data) {
-            if (isHost) {
-                if (data.type === 'JOIN_PARTY') {
-                    if (!party.some(p => p.id === data.hero.id)) {
-                        party.push(data.hero);
-                        broadcastToAll({
-                            type: 'SYSTEM_MSG',
-                            text: `⚔️ <b>${data.hero.name}</b> the ${data.hero.role} has entered the realm!`
-                        });
-                    }
-                } else if (data.type === 'PLAYER_ACTION_CHOSEN') {
-                    broadcastToAll({
-                        type: 'PROMPT_ROLL',
-                        targetHero: data.heroName,
-                        actionText: data.actionText
-                    });
-                } else if (data.type === 'PLAYER_ROLLED') {
+        // 3. HOST DISPATCHER
+        function handleIncomingNetworkMessage(data, senderConn) {
+            log(`Host received: ${data.type}`);
+            if (data.type === 'JOIN_PARTY') {
+                if (!party.some(p => p.id === data.hero.id)) {
+                    party.push(data.hero);
                     broadcastToAll({
                         type: 'SYSTEM_MSG',
-                        text: `🎲 <b>${data.heroName}</b> rolled a <b>${data.roll}</b> (Total with Mod: <b>${data.total}</b>) for: "${data.actionText}"!`
+                        text: `⚔️ <b>${data.hero.name}</b> the ${data.hero.role} has entered the realm!`
                     });
-                    triggerGeminiResolution(data.heroName, data.actionText, data.roll, data.total);
                 }
+            } else if (data.type === 'PLAYER_ACTION_CHOSEN') {
+                broadcastToAll({
+                    type: 'PROMPT_ROLL',
+                    targetHero: data.heroName,
+                    actionText: data.actionText
+                });
+            } else if (data.type === 'PLAYER_ROLLED') {
+                broadcastToAll({
+                    type: 'SYSTEM_MSG',
+                    text: `🎲 <b>${data.heroName}</b> rolled a <b>${data.roll}</b> (Total with Mod: <b>${data.total}</b>) for: "${data.actionText}"!`
+                });
+                triggerGeminiResolution(data.heroName, data.actionText, data.roll, data.total);
             }
-
-            handlePlayerIncomingData(data);
         }
 
-        // 4. UI RECEIVER LOGIC
+        // 4. PLAYER UI RECEIVER
         function handlePlayerIncomingData(data) {
             const narrativeBox = document.getElementById('narrative-box');
             const choicesBox = document.getElementById('dynamic-choices');
@@ -530,15 +581,22 @@
             }
         }
 
-        // 5. PLAYER OUTGOING ACTIONS & ROLLS
+        // 5. PLAYER OUTGOING ACTIONS
         function selectAction(choice) {
             document.getElementById('dynamic-choices').innerHTML = '';
             document.getElementById('turn-notice').innerText = "Broadcasting choice...";
-            broadcastToAll({
+            
+            const payload = {
                 type: 'PLAYER_ACTION_CHOSEN',
                 heroName: myHero.name,
                 actionText: choice
-            });
+            };
+
+            if (isHost) {
+                handleIncomingNetworkMessage(payload, null);
+            } else if (hostConn && hostConn.open) {
+                hostConn.send(payload);
+            }
         }
 
         function handleD20Roll() {
@@ -551,13 +609,19 @@
 
             document.getElementById('turn-notice').innerText = `Rolled ${naturalRoll} + ${myHero.mod} Mod = ${totalWithMod}! Resolving...`;
 
-            broadcastToAll({
+            const payload = {
                 type: 'PLAYER_ROLLED',
                 heroName: myHero.name,
                 actionText: pendingActionText,
                 roll: naturalRoll,
                 total: totalWithMod
-            });
+            };
+
+            if (isHost) {
+                handleIncomingNetworkMessage(payload, null);
+            } else if (hostConn && hostConn.open) {
+                hostConn.send(payload);
+            }
         }
 
         // 6. HOST AI RESOLUTION
@@ -618,6 +682,7 @@ Describe the outcome. If this roll completes a key task or defeats a foe, set co
 
         async function fetchAndBroadcastGemini() {
             try {
+                log("Querying Gemini DM...");
                 const response = await fetch(API_URL, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -650,7 +715,7 @@ Describe the outcome. If this roll completes a key task or defeats a foe, set co
                 });
 
             } catch (err) {
-                console.error("Gemini Failure:", err);
+                log(`Gemini error: ${err.message}`);
                 broadcastToAll({
                     type: 'SYSTEM_MSG',
                     text: `⚠️ DM communication interrupted: ${err.message}`
@@ -659,9 +724,12 @@ Describe the outcome. If this roll completes a key task or defeats a foe, set co
         }
 
         function broadcastToAll(payload) {
-            if (mqttClient && mqttClient.connected) {
-                mqttClient.publish(currentTopic, JSON.stringify(payload));
-            }
+            // Send to connected player clients
+            connections.forEach(conn => {
+                if (conn.open) conn.send(payload);
+            });
+            // Update host UI as well
+            handlePlayerIncomingData(payload);
         }
 
         function switchScreen(screenId) {
