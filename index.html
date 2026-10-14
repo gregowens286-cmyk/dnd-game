@@ -26,7 +26,7 @@
             color: var(--text-color);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             box-sizing: border-box;
-            overscroll-behavior-y: contain; /* Prevents accidental mobile pull-to-refresh */
+            overscroll-behavior-y: contain;
         }
 
         body {
@@ -340,7 +340,7 @@
         var activeGenre = "Medieval Fantasy";
 
         // Native Speech Synthesis Narration Toggle
-        var synth = window.speechSynthesis;[span_0](start_span)[span_0](end_span)
+        var synth = window.speechSynthesis;
         var narrationEnabled = true;
 
         // Native WebRTC Audio Mesh variables
@@ -358,7 +358,7 @@
 
         window.addEventListener('DOMContentLoaded', function() {
             if (synth) {
-                synth.getVoices();[span_1](start_span)[span_1](end_span)
+                synth.getVoices();
             }
             checkExistingSave();
         });
@@ -403,31 +403,31 @@
                 btn.innerText = "🔇 Narration: OFF";
                 btn.className = "btn";
                 btn.style.backgroundColor = "#555";
-                if (synth) synth.cancel();[span_2](start_span)[span_2](end_span)
+                if (synth) synth.cancel();
             }
         }
 
         function speakNarrative(textToSpeak) {
-            if (!synth || !narrationEnabled) return;[span_3](start_span)[span_3](end_span)
+            if (!synth || !narrationEnabled) return;
 
-            synth.cancel();[span_4](start_span)[span_4](end_span)
+            synth.cancel();
             var cleanText = textToSpeak.replace(/<[^>]*>?/gm, '').trim();
             if (!cleanText) return;
 
-            var utterance = new SpeechSynthesisUtterance(cleanText);[span_5](start_span)[span_5](end_span)
-            utterance.lang = 'en-US';[span_6](start_span)[span_6](end_span)
+            var utterance = new SpeechSynthesisUtterance(cleanText);
+            utterance.lang = 'en-US';
 
-            var voices = synth.getVoices().filter(function(v) { return v.lang.startsWith('en'); });[span_7](start_span)[span_7](end_span)
+            var voices = synth.getVoices().filter(function(v) { return v.lang.startsWith('en'); });
             var selectedVoice = voices.find(function(v) { 
                 return v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('en-GB'); 
-            });[span_8](start_span)[span_8](end_span)
-            if (!selectedVoice && voices.length > 0) selectedVoice = voices[0];[span_9](start_span)[span_9](end_span)
-            if (selectedVoice) utterance.voice = selectedVoice;[span_10](start_span)[span_10](end_span)
+            });
+            if (!selectedVoice && voices.length > 0) selectedVoice = voices[0];
+            if (selectedVoice) utterance.voice = selectedVoice;
 
-            utterance.rate = 0.90;[span_11](start_span)[span_11](end_span)
-            utterance.pitch = 1.1;[span_12](start_span)[span_12](end_span)
+            utterance.rate = 0.90;
+            utterance.pitch = 1.1;
 
-            synth.speak(utterance);[span_13](start_span)[span_13](end_span)
+            synth.speak(utterance);
         }
 
         function checkExistingSave() {
@@ -880,7 +880,7 @@
                     d20Btn.disabled = false;
                     d20Btn.classList.add('ready-to-roll');
                     pendingActionText = data.actionText;
-                    speakNarrative("You selected " + data.actionText + ". Roll your d20.");[span_14](start_span)[span_14](end_span)
+                    speakNarrative("You selected " + data.actionText + ". Roll your d20.");
                 } else {
                     turnNotice.innerText = data.targetHero + ' is rolling the d20...';
                     d20Btn.disabled = true;
@@ -906,12 +906,12 @@
             d20Btn.disabled = true;
             d20Btn.classList.remove('ready-to-roll');
 
-            var naturalRoll = Math.floor(Math.random() * 20) + 1;[span_15](start_span)[span_15](end_span)
+            var naturalRoll = Math.floor(Math.random() * 20) + 1;
             var totalWithMod = naturalRoll + myHero.mod;
 
             document.getElementById('turn-notice').innerText = 'Rolled ' + naturalRoll + ' + ' + myHero.mod + ' Mod = ' + totalWithMod + '! Resolving...';
 
-            speakNarrative("You rolled a " + naturalRoll + "!");[span_16](start_span)[span_16](end_span)
+            speakNarrative("You rolled a " + naturalRoll + "!");
 
             broadcastToAll({
                 type: 'PLAYER_ROLLED',
@@ -949,7 +949,7 @@
                     role: "user",
                     parts: [{
                         text: 'You are the DM running a ' + activeGenre + ' campaign for: ' + partyRoster + '.\n' +
-'Format ALL responses strictly as valid JSON with NO markdown code fences or extra text:\n' +
+'Respond ONLY with valid JSON structured exactly as:\n' +
 '{\n' +
 '  "narrative": "scene description",\n' +
 '  "targetHero": "specific hero name whose turn it is to act, or ALL",\n' +
@@ -987,12 +987,21 @@
         }
 
         async function fetchAndBroadcastGemini() {
+            var d20Btn = document.getElementById('d20-btn');
             try {
                 log('Querying Gemini DM...');
                 var response = await fetch(API_URL, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ contents: gameHistory })
+                    body: JSON.stringify({
+                        contents: gameHistory,
+                        generationConfig: {
+                            responseMimeType: "application/json",
+                            thinkingConfig: {
+                                thinkingBudget: 0
+                            }
+                        }
+                    })
                 });
 
                 var data = await response.json();
@@ -1000,7 +1009,14 @@
                     throw new Error(data.error.message || "Gemini API rejected request");
                 }
 
-                var rawText = data.candidates[0].content.parts[0].text;
+                if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
+                    throw new Error("Empty candidate payload from Gemini.");
+                }
+
+                var parts = data.candidates[0].content.parts;
+                var textPart = parts.find(function(p) { return p.text && !p.thought; }) || parts[parts.length - 1];
+                var rawText = textPart.text;
+
                 var cleanJson = rawText.replace(/```json/gi, "").replace(/```/g, "").trim();
                 var parsed = JSON.parse(cleanJson);
 
@@ -1020,14 +1036,24 @@
                     choices: parsed.choices || []
                 });
 
+                log('DM query complete.');
                 saveGameState();
 
             } catch (err) {
                 log('Gemini error: ' + err.message);
                 broadcastToAll({
                     type: 'SYSTEM_MSG',
-                    text: '⚠️ DM communication interrupted: ' + err.message
+                    text: '⚠️ DM communication error: ' + err.message
                 });
+
+                if (d20Btn) {
+                    d20Btn.disabled = true;
+                    d20Btn.classList.remove('ready-to-roll');
+                }
+                var choicesBox = document.getElementById('dynamic-choices');
+                if (choicesBox && isHost) {
+                    choicesBox.innerHTML = '<button class="btn btn-green" onclick="fetchAndBroadcastGemini()">🔄 Retry DM Action</button>';
+                }
             }
         }
 
