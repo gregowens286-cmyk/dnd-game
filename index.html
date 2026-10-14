@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>D&D Mobile Storyteller - Live Party</title>
-    <!-- MQTT over WebSockets: Bypasses NAT/firewalls via HTTPS Port 443 -->
+    <!-- MQTT over WebSockets -->
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <style>
         :root {
@@ -294,8 +294,7 @@
     </div>
 
     <script>
-        var API_KEY = "AQ.Ab8RN6KoxBba0uWyWBCSI-fGnGOKhEEV_irReIBDXiliaLlLJg";[span_3](start_span)[span_3](end_span)
-        // Updated to supported production model: gemini-2.5-flash
+        var API_KEY = "AQ.Ab8RN6KoxBba0uWyWBCSI-fGnGOKhEEV_irReIBDXiliaLlLJg";
         var API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + API_KEY;
 
         var mqttClient = null;
@@ -326,7 +325,6 @@
 
         function connectBroker(onSuccess) {
             log("Connecting to relay...");
-            // Use EMQX public secure websocket endpoint
             mqttClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt', {
                 clientId: 'dnd_' + Math.random().toString(16).substr(2, 8),
                 connectTimeout: 6000,
@@ -447,7 +445,6 @@
                         log("Player connected to room " + currentRoomCode);
                         document.getElementById('narrative-box').innerHTML = '<em>Connected to room ' + codeInput + '! Waiting for Host to start...</em>';
 
-                        // Announce join to party
                         broadcastToAll({
                             type: 'JOIN_PARTY',
                             hero: myHero
@@ -576,7 +573,7 @@
             d20Btn.disabled = true;
             d20Btn.classList.remove('ready-to-roll');
 
-            var naturalRoll = Math.floor(Math.random() * 20) + 1;[span_4](start_span)[span_4](end_span)
+            var naturalRoll = Math.floor(Math.random() * 20) + 1;
             var totalWithMod = naturalRoll + myHero.mod;
 
             document.getElementById('turn-notice').innerText = 'Rolled ' + naturalRoll + ' + ' + myHero.mod + ' Mod = ' + totalWithMod + '! Resolving...';
@@ -652,19 +649,19 @@
                 var response = await fetch(API_URL, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ contents: gameHistory })[span_5](start_span)[span_5](end_span)
+                    body: JSON.stringify({ contents: gameHistory })
                 });
 
-                var data = await response.json();[span_6](start_span)[span_6](end_span)
+                var data = await response.json();
                 if (data.error) {
                     throw new Error(data.error.message || "Gemini API rejected request");
                 }
 
-                var rawText = data.candidates[0].content.parts[0].text;[span_7](start_span)[span_7](end_span)
-                var cleanJson = rawText.replace(/```json/gi, "").replace(/```/g, "").trim();[span_8](start_span)[span_8](end_span)
-                var parsed = JSON.parse(cleanJson);[span_9](start_span)[span_9](end_span)
+                var rawText = data.candidates[0].content.parts[0].text;
+                var cleanJson = rawText.replace(/```json/gi, "").replace(/```/g, "").trim();
+                var parsed = JSON.parse(cleanJson);
 
-                gameHistory.push({ role: "model", parts: [{ text: rawText }] });[span_10](start_span)[span_10](end_span)
+                gameHistory.push({ role: "model", parts: [{ text: rawText }] });
 
                 if (parsed.completedTask && parsed.levelUpHero && parsed.levelUpHero !== 'NONE') {
                     broadcastToAll({
