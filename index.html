@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>D&D Mobile Storyteller - Live Party</title>
-    <!-- PeerJS CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+    <!-- MQTT over WebSockets: Bypasses NAT/firewalls via HTTPS Port 443 -->
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <style>
         :root {
             --bg-color: #1a1a1a;
@@ -200,7 +200,7 @@
             padding: 6px;
             border-radius: 4px;
             margin-top: 4px;
-            max-height: 60px;
+            max-height: 50px;
             overflow-y: auto;
         }
     </style>
@@ -294,24 +294,14 @@
     </div>
 
     <script>
-        var peerConfig = {
-            config: {
-                iceServers: [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:stun1.l.google.com:19302' },
-                    { urls: 'stun:stun2.l.google.com:19302' }
-                ]
-            }
-        };
-
-        var API_KEY = "AQ.Ab8RN6KoxBba0uWyWBCSI-fGnGOKhEEV_irReIBDXiliaLlLJg";[span_2](start_span)[span_2](end_span)
+        var API_KEY = "AQ.Ab8RN6KoxBba0uWyWBCSI-fGnGOKhEEV_irReIBDXiliaLlLJg";[span_3](start_span)[span_3](end_span)
+        // Updated to supported production model: gemini-2.5-flash
         var API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + API_KEY;
 
-        var peer = null;
+        var mqttClient = null;
         var isHost = false;
         var currentRoomCode = "";
-        var connections = [];
-        var hostConn = null;
+        var currentTopic = "";
 
         var party = [];
         var myHero = null;
@@ -334,10 +324,46 @@
             }
         }
 
+        function connectBroker(onSuccess) {
+            log("Connecting to relay...");
+            // Use EMQX public secure websocket endpoint
+            mqttClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt', {
+                clientId: 'dnd_' + Math.random().toString(16).substr(2, 8),
+                connectTimeout: 6000,
+                reconnectPeriod: 2500
+            });
+
+            mqttClient.on('connect', function() {
+                log("Relay connected!");
+                setStatusOnline(true);
+                if (onSuccess) onSuccess();
+            });
+
+            mqttClient.on('message', function(topic, message) {
+                try {
+                    var data = JSON.parse(message.toString());
+                    handleIncomingNetworkMessage(data);
+                } catch (err) {
+                    console.error("Malformed message", err);
+                }
+            });
+
+            mqttClient.on('error', function(err) {
+                log("Relay error: " + err);
+                setStatusOnline(false);
+            });
+
+            mqttClient.on('offline', function() {
+                setStatusOnline(false);
+            });
+        }
+
         // 1. HOST SETUP
         function setupHost() {
             try {
                 currentRoomCode = generateCode(4);
+                currentTopic = 'dnd-game-room/' + currentRoomCode;
+
                 var hostName = document.getElementById('host-hero-name').value.trim() || "Party Leader";
                 var hostRole = document.getElementById('host-hero-role').value;
 
@@ -360,49 +386,26 @@
                 document.getElementById('display-player-role').innerText = myHero.name + ' (' + myHero.role + ') [Host]';
                 renderHeroHUD();
 
-                log('Initializing host: dnd-realm-' + currentRoomCode);
+                document.getElementById('narrative-box').innerHTML = 
+                    '<b>Room Code: ' + currentRoomCode + '</b><br>' +
+                    '⚔️ <b>' + myHero.name + '</b> (' + myHero.role + ') is ready.<br>' +
+                    'Connecting to party relay...';
 
-                peer = new Peer('dnd-realm-' + currentRoomCode, peerConfig);
-
-                peer.on('open', function(id) {
+                connectBroker(function() {
                     isHost = true;
-                    setStatusOnline(true);
-                    log('Host active! Code: ' + currentRoomCode);
-                    document.getElementById('narrative-box').innerHTML = 
-                        '<b>Room Code: ' + currentRoomCode + '</b><br>' +
-                        '⚔️ <b>' + myHero.name + '</b> (' + myHero.role + ') is ready.<br>' +
-                        'Have other devices enter room code <b>' + currentRoomCode + '</b> and tap Join!';
-                    renderHostStartControl();
-                });
-
-                peer.on('connection', function(conn) {
-                    log('Incoming connection detected...');
-                    connections.push(conn);
-
-                    conn.on('open', function() {
-                        log('Player connected!');
+                    mqttClient.subscribe(currentTopic, function() {
+                        log("Host subscribed to: " + currentRoomCode);
+                        document.getElementById('narrative-box').innerHTML = 
+                            '<b>Room Code: ' + currentRoomCode + '</b><br>' +
+                            '⚔️ <b>' + myHero.name + '</b> (' + myHero.role + ') is ready.<br>' +
+                            'Have other devices enter room code <b>' + currentRoomCode + '</b> and tap Join!';
+                        renderHostStartControl();
                     });
-
-                    conn.on('data', function(data) {
-                        handleIncomingNetworkMessage(data, conn);
-                    });
-
-                    conn.on('close', function() {
-                        connections = connections.filter(function(c) { return c !== conn; });
-                    });
-                });
-
-                peer.on('error', function(err) {
-                    log('Host peer error: ' + err.type);
-                    if (err.type === 'unavailable-id') {
-                        alert('Room code collision! Click Host & Play again.');
-                        switchScreen('screen-lobby');
-                    }
                 });
 
             } catch (e) {
-                alert('Host startup failed: ' + e.message);
-                log('Error: ' + e.message);
+                alert("Host startup failed: " + e.message);
+                log("Error: " + e.message);
             }
         }
 
@@ -414,11 +417,12 @@
                 var roleInput = document.getElementById('player-hero-role').value;
 
                 if (codeInput.length !== 4) {
-                    alert('Please enter a valid 4-letter room code.');
+                    alert("Please enter a valid 4-letter room code.");
                     return;
                 }
 
                 currentRoomCode = codeInput;
+                currentTopic = 'dnd-game-room/' + currentRoomCode;
 
                 myHero = {
                     id: 'hero_' + Math.random().toString(36).substring(2, 9),
@@ -436,44 +440,24 @@
                 document.getElementById('display-room-code').innerHTML = '<span id="net-status-dot" class="status-dot"></span> Room: ' + codeInput;
                 document.getElementById('display-player-role').innerText = myHero.name + ' (' + myHero.role + ')';
                 renderHeroHUD();
-                document.getElementById('narrative-box').innerHTML = '<em>Contacting host room ' + codeInput + '...</em>';
+                document.getElementById('narrative-box').innerHTML = '<em>Connecting to room ' + codeInput + '...</em>';
 
-                log('Connecting to host...');
-                peer = new Peer(peerConfig);
+                connectBroker(function() {
+                    mqttClient.subscribe(currentTopic, function() {
+                        log("Player connected to room " + currentRoomCode);
+                        document.getElementById('narrative-box').innerHTML = '<em>Connected to room ' + codeInput + '! Waiting for Host to start...</em>';
 
-                peer.on('open', function() {
-                    var targetHostId = 'dnd-realm-' + codeInput;
-                    hostConn = peer.connect(targetHostId, { reliable: true });
-
-                    hostConn.on('open', function() {
-                        setStatusOnline(true);
-                        log('Connected to Host successfully!');
-                        document.getElementById('narrative-box').innerHTML = '<em>Connected to room ' + codeInput + '! Waiting for Host to start the adventure...</em>';
-
-                        hostConn.send({
+                        // Announce join to party
+                        broadcastToAll({
                             type: 'JOIN_PARTY',
                             hero: myHero
                         });
                     });
-
-                    hostConn.on('data', function(data) {
-                        handlePlayerIncomingData(data);
-                    });
-
-                    hostConn.on('close', function() {
-                        setStatusOnline(false);
-                        log('Disconnected from Host.');
-                    });
-                });
-
-                peer.on('error', function(err) {
-                    log('Peer client error: ' + err.type);
-                    alert('Could not connect to room ' + codeInput + '. Verify the room code.');
                 });
 
             } catch (e) {
-                alert('Join error: ' + e.message);
-                log('Error: ' + e.message);
+                alert("Join error: " + e.message);
+                log("Error: " + e.message);
             }
         }
 
@@ -485,30 +469,34 @@
             document.getElementById('stat-mod').innerText = '+' + myHero.mod;
         }
 
-        // 3. HOST DISPATCHER
-        function handleIncomingNetworkMessage(data, senderConn) {
-            log('Host received: ' + data.type);
-            if (data.type === 'JOIN_PARTY') {
-                if (!party.some(function(p) { return p.id === data.hero.id; })) {
-                    party.push(data.hero);
+        // 3. NETWORK MESSAGE DISPATCHER
+        function handleIncomingNetworkMessage(data) {
+            if (isHost) {
+                if (data.type === 'JOIN_PARTY') {
+                    if (!party.some(function(p) { return p.id === data.hero.id; })) {
+                        party.push(data.hero);
+                        log("Player joined: " + data.hero.name);
+                        broadcastToAll({
+                            type: 'SYSTEM_MSG',
+                            text: '⚔️ <b>' + data.hero.name + '</b> the ' + data.hero.role + ' has entered the realm!'
+                        });
+                    }
+                } else if (data.type === 'PLAYER_ACTION_CHOSEN') {
+                    broadcastToAll({
+                        type: 'PROMPT_ROLL',
+                        targetHero: data.heroName,
+                        actionText: data.actionText
+                    });
+                } else if (data.type === 'PLAYER_ROLLED') {
                     broadcastToAll({
                         type: 'SYSTEM_MSG',
-                        text: '⚔️ <b>' + data.hero.name + '</b> the ' + data.hero.role + ' has entered the realm!'
+                        text: '🎲 <b>' + data.heroName + '</b> rolled a <b>' + data.roll + '</b> (Total: <b>' + data.total + '</b>) for: "' + data.actionText + '"!'
                     });
+                    triggerGeminiResolution(data.heroName, data.actionText, data.roll, data.total);
                 }
-            } else if (data.type === 'PLAYER_ACTION_CHOSEN') {
-                broadcastToAll({
-                    type: 'PROMPT_ROLL',
-                    targetHero: data.heroName,
-                    actionText: data.actionText
-                });
-            } else if (data.type === 'PLAYER_ROLLED') {
-                broadcastToAll({
-                    type: 'SYSTEM_MSG',
-                    text: '🎲 <b>' + data.heroName + '</b> rolled a <b>' + data.roll + '</b> (Total: <b>' + data.total + '</b>) for: "' + data.actionText + '"!'
-                });
-                triggerGeminiResolution(data.heroName, data.actionText, data.roll, data.total);
             }
+
+            handlePlayerIncomingData(data);
         }
 
         // 4. PLAYER UI RECEIVER
@@ -576,17 +564,11 @@
             document.getElementById('dynamic-choices').innerHTML = '';
             document.getElementById('turn-notice').innerText = 'Broadcasting choice...';
             
-            var payload = {
+            broadcastToAll({
                 type: 'PLAYER_ACTION_CHOSEN',
                 heroName: myHero.name,
                 actionText: choice
-            };
-
-            if (isHost) {
-                handleIncomingNetworkMessage(payload, null);
-            } else if (hostConn && hostConn.open) {
-                hostConn.send(payload);
-            }
+            });
         }
 
         function handleD20Roll() {
@@ -594,24 +576,18 @@
             d20Btn.disabled = true;
             d20Btn.classList.remove('ready-to-roll');
 
-            var naturalRoll = Math.floor(Math.random() * 20) + 1;[span_3](start_span)[span_3](end_span)
+            var naturalRoll = Math.floor(Math.random() * 20) + 1;[span_4](start_span)[span_4](end_span)
             var totalWithMod = naturalRoll + myHero.mod;
 
             document.getElementById('turn-notice').innerText = 'Rolled ' + naturalRoll + ' + ' + myHero.mod + ' Mod = ' + totalWithMod + '! Resolving...';
 
-            var payload = {
+            broadcastToAll({
                 type: 'PLAYER_ROLLED',
                 heroName: myHero.name,
                 actionText: pendingActionText,
                 roll: naturalRoll,
                 total: totalWithMod
-            };
-
-            if (isHost) {
-                handleIncomingNetworkMessage(payload, null);
-            } else if (hostConn && hostConn.open) {
-                hostConn.send(payload);
-            }
+            });
         }
 
         // 6. HOST AI RESOLUTION
@@ -676,19 +652,19 @@
                 var response = await fetch(API_URL, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ contents: gameHistory })[span_4](start_span)[span_4](end_span)
+                    body: JSON.stringify({ contents: gameHistory })[span_5](start_span)[span_5](end_span)
                 });
 
-                var data = await response.json();[span_5](start_span)[span_5](end_span)
+                var data = await response.json();[span_6](start_span)[span_6](end_span)
                 if (data.error) {
                     throw new Error(data.error.message || "Gemini API rejected request");
                 }
 
-                var rawText = data.candidates[0].content.parts[0].text;[span_6](start_span)[span_6](end_span)
-                var cleanJson = rawText.replace(/```json/gi, "").replace(/```/g, "").trim();[span_7](start_span)[span_7](end_span)
-                var parsed = JSON.parse(cleanJson);[span_8](start_span)[span_8](end_span)
+                var rawText = data.candidates[0].content.parts[0].text;[span_7](start_span)[span_7](end_span)
+                var cleanJson = rawText.replace(/```json/gi, "").replace(/```/g, "").trim();[span_8](start_span)[span_8](end_span)
+                var parsed = JSON.parse(cleanJson);[span_9](start_span)[span_9](end_span)
 
-                gameHistory.push({ role: "model", parts: [{ text: rawText }] });[span_9](start_span)[span_9](end_span)
+                gameHistory.push({ role: "model", parts: [{ text: rawText }] });[span_10](start_span)[span_10](end_span)
 
                 if (parsed.completedTask && parsed.levelUpHero && parsed.levelUpHero !== 'NONE') {
                     broadcastToAll({
@@ -714,10 +690,9 @@
         }
 
         function broadcastToAll(payload) {
-            connections.forEach(function(conn) {
-                if (conn.open) conn.send(payload);
-            });
-            handlePlayerIncomingData(payload);
+            if (mqttClient && mqttClient.connected) {
+                mqttClient.publish(currentTopic, JSON.stringify(payload));
+            }
         }
 
         function switchScreen(screenId) {
