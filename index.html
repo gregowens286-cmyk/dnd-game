@@ -6,6 +6,8 @@
     <title>D&D Mobile Storyteller - Live Party</title>
     <!-- MQTT over WebSockets -->
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <!-- Embedded Party Voice API -->
+    <script src="https://meet.jit.si/external_api.js"></script>
     <style>
         :root {
             --bg-color: #1a1a1a;
@@ -15,6 +17,7 @@
             --accent-hover: #ff5252;
             --active-gold: #f39c12;
             --success-green: #27ae60;
+            --save-blue: #2980b9;
         }
 
         html, body {
@@ -89,6 +92,27 @@
         .stat-box { font-size: 0.8rem; }
         .stat-val { font-size: 1.15rem; font-weight: bold; color: var(--active-gold); }
 
+        .utility-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #222;
+            border: 1px solid #444;
+            border-radius: 6px;
+            padding: 6px 10px;
+            margin-bottom: 8px;
+            gap: 6px;
+        }
+
+        #voice-container {
+            display: none;
+            height: 180px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid #444;
+        }
+
         .btn {
             background-color: var(--accent-color);
             color: white;
@@ -109,6 +133,7 @@
             cursor: not-allowed;
         }
         .btn-green { background-color: var(--success-green); }
+        .btn-blue { background-color: var(--save-blue); }
 
         #d20-container {
             display: flex;
@@ -212,8 +237,13 @@
         <h2>Enter Realm</h2>
         
         <div class="card">
-            <h3>Host New Adventure (Play & Host)</h3>
+            <h3>Host Adventure (Play & Host)</h3>
             <p style="font-size: 0.85rem; color:#aaa;">Runs the DM engine and equips your character as Player 1.</p>
+
+            <div id="resume-container" style="display:none; margin-bottom: 12px; border-bottom: 1px solid #444; padding-bottom: 12px;">
+                <button class="btn btn-blue" style="width: 100%;" onclick="resumeSavedGame()">📂 Resume Saved Campaign</button>
+                <div id="save-info" style="font-size: 0.8rem; color: #aaa; margin-top: 4px;"></div>
+            </div>
 
             <div class="input-group">
                 <label>Setting / Genre</label>
@@ -237,7 +267,7 @@
                     <option value="Cleric">Cleric / Support</option>
                 </select>
             </div>
-            <button class="btn btn-green" onclick="setupHost()">Host & Play</button>
+            <button class="btn btn-green" onclick="setupHost()">Host New Game</button>
         </div>
 
         <div class="card">
@@ -272,6 +302,13 @@
             <span class="badge" id="display-player-role">Connecting...</span>
         </div>
 
+        <!-- Integrated Utility Bar (Voice & Save) -->
+        <div class="utility-bar">
+            <button id="voice-btn" class="btn btn-green" style="padding:6px 12px; margin:0; font-size:0.8rem;" onclick="toggleVoiceCall()">🎙️ Join Voice</button>
+            <button id="save-btn" class="btn btn-blue" style="padding:6px 12px; margin:0; font-size:0.8rem; display:none;" onclick="manualSaveGame()">💾 Save Progress</button>
+        </div>
+        <div id="voice-container"></div>
+
         <div class="stat-banner" id="stats-banner">
             <div class="stat-box"><span class="stat-val" id="stat-hp">20</span><br>HP</div>
             <div class="stat-box"><span class="stat-val" id="stat-ac">14</span><br>Armor</div>
@@ -295,11 +332,10 @@
     </div>
 
     <script>
-        // Split strings bypass static scanners while resolving at runtime
         var _kPart1 = "AQ.Ab8RN6KgzYEaRFx0";
         var _kPart2 = "_9S7ZIZZzIKZf-o8l8uZEWBH0u2BKo4I1A";
         var API_KEY = _kPart1 + _kPart2;
-        var API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=" + API_KEY;
+        var API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + API_KEY;
 
         var mqttClient = null;
         var isHost = false;
@@ -310,6 +346,14 @@
         var myHero = null;
         var pendingActionText = "";
         var gameHistory = [];
+        var activeGenre = "Medieval Fantasy";
+
+        var jitsiApi = null;
+        var voiceActive = false;
+
+        window.addEventListener('DOMContentLoaded', function() {
+            checkExistingSave();
+        });
 
         function log(msg) {
             console.log(msg);
@@ -325,6 +369,42 @@
                 if (isOnline) dot.classList.add('online');
                 else dot.classList.remove('online');
             }
+        }
+
+        function checkExistingSave() {
+            var savedData = localStorage.getItem('dnd_multiplayer_save');
+            if (savedData) {
+                try {
+                    var parsed = JSON.parse(savedData);
+                    document.getElementById('resume-container').style.display = 'block';
+                    var rosterNames = parsed.party.map(function(p) { return p.name + " (Lvl " + p.level + ")"; }).join(", ");
+                    document.getElementById('save-info').innerText = "Saved: " + parsed.genre + " (" + rosterNames + ") - " + parsed.date;
+                } catch (e) {}
+            }
+        }
+
+        function manualSaveGame() {
+            if (!isHost) return;
+            saveGameState();
+            broadcastToAll({
+                type: 'SYSTEM_MSG',
+                text: "💾 <b>Campaign progress saved by Host!</b>"
+            });
+            alert("Campaign progress saved successfully!");
+        }
+
+        function saveGameState() {
+            if (!isHost) return;
+            var currentNarrative = document.getElementById('narrative-box').innerHTML;
+            var savePayload = {
+                genre: activeGenre,
+                party: party,
+                history: gameHistory,
+                narrative: currentNarrative,
+                date: new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+            };
+            localStorage.setItem('dnd_multiplayer_save', JSON.stringify(savePayload));
+            checkExistingSave();
         }
 
         function connectBroker(onSuccess) {
@@ -360,11 +440,56 @@
             });
         }
 
-        // 1. HOST SETUP
+        function toggleVoiceCall() {
+            var container = document.getElementById('voice-container');
+            var btn = document.getElementById('voice-btn');
+
+            if (!voiceActive) {
+                container.style.display = 'block';
+                btn.innerText = 'Leave Voice';
+                btn.classList.remove('btn-green');
+                btn.style.backgroundColor = '#b33939';
+
+                var domain = "meet.jit.si";
+                var options = {
+                    roomName: "DNDPartyRoom_" + currentRoomCode,
+                    width: "100%",
+                    height: "100%",
+                    parentNode: container,
+                    userInfo: {
+                        displayName: myHero.name + " (" + myHero.role + ")"
+                    },
+                    configOverwrite: {
+                        startWithAudioMuted: false,
+                        startWithVideoMuted: true,
+                        prejoinPageEnabled: false
+                    },
+                    interfaceConfigOverwrite: {
+                        TOOLBAR_BUTTONS: ['microphone', 'camera', 'hangup']
+                    }
+                };
+
+                jitsiApi = new JitsiMeetExternalAPI(domain, options);
+                voiceActive = true;
+            } else {
+                if (jitsiApi) {
+                    jitsiApi.dispose();
+                    jitsiApi = null;
+                }
+                container.style.display = 'none';
+                btn.innerText = '🎙️ Join Voice';
+                btn.style.backgroundColor = '';
+                btn.classList.add('btn-green');
+                voiceActive = false;
+            }
+        }
+
+        // 1. HOST SETUP (NEW GAME)
         function setupHost() {
             try {
                 currentRoomCode = generateCode(4);
                 currentTopic = 'dnd-game-room/' + currentRoomCode;
+                activeGenre = document.getElementById('host-genre').value;
 
                 var hostName = document.getElementById('host-hero-name').value.trim() || "Party Leader";
                 var hostRole = document.getElementById('host-hero-role').value;
@@ -382,36 +507,71 @@
                 };
 
                 party = [myHero];
+                gameHistory = [];
 
-                switchScreen('screen-game');
-                document.getElementById('display-room-code').innerHTML = '<span id="net-status-dot" class="status-dot"></span> Room: ' + currentRoomCode;
-                document.getElementById('display-player-role').innerText = myHero.name + ' (' + myHero.role + ') [Host]';
-                renderHeroHUD();
-
-                document.getElementById('narrative-box').innerHTML = 
-                    '<b>Room Code: ' + currentRoomCode + '</b><br>' +
-                    '⚔️ <b>' + myHero.name + '</b> (' + myHero.role + ') is ready.<br>' +
-                    'Connecting to party relay...';
-
-                connectBroker(function() {
-                    isHost = true;
-                    mqttClient.subscribe(currentTopic, function() {
-                        log("Host subscribed to: " + currentRoomCode);
-                        document.getElementById('narrative-box').innerHTML = 
-                            '<b>Room Code: ' + currentRoomCode + '</b><br>' +
-                            '⚔️ <b>' + myHero.name + '</b> (' + myHero.role + ') is ready.<br>' +
-                            'Have other devices enter room code <b>' + currentRoomCode + '</b> and tap Join!';
-                        renderHostStartControl();
-                    });
-                });
-
+                startHostSession(false);
             } catch (e) {
                 alert("Host startup failed: " + e.message);
                 log("Error: " + e.message);
             }
         }
 
-        // 2. PLAYER JOIN
+        // 2. HOST RESUME GAME
+        function resumeSavedGame() {
+            var savedData = localStorage.getItem('dnd_multiplayer_save');
+            if (!savedData) return;
+            var parsed = JSON.parse(savedData);
+
+            currentRoomCode = generateCode(4);
+            currentTopic = 'dnd-game-room/' + currentRoomCode;
+            activeGenre = parsed.genre;
+            party = parsed.party;
+            gameHistory = parsed.history;
+
+            // Host takes first hero in the saved roster
+            myHero = party[0];
+
+            startHostSession(true, parsed.narrative);
+        }
+
+        function startHostSession(isResumed, savedNarrative) {
+            switchScreen('screen-game');
+            document.getElementById('display-room-code').innerHTML = '<span id="net-status-dot" class="status-dot"></span> Room: ' + currentRoomCode;
+            document.getElementById('display-player-role').innerText = myHero.name + ' (' + myHero.role + ') [Host]';
+            document.getElementById('save-btn').style.display = 'inline-block';
+            renderHeroHUD();
+
+            document.getElementById('narrative-box').innerHTML = 
+                '<b>Room Code: ' + currentRoomCode + '</b><br>' +
+                '⚔️ <b>' + myHero.name + '</b> (' + myHero.role + ') is ready.<br>' +
+                'Connecting to party relay...';
+
+            connectBroker(function() {
+                isHost = true;
+                mqttClient.subscribe(currentTopic, function() {
+                    log("Host subscribed to: " + currentRoomCode);
+                    
+                    if (isResumed) {
+                        document.getElementById('narrative-box').innerHTML = 
+                            '<b>Resuming Campaign: ' + activeGenre + '</b><br>' +
+                            '<b>Room Code: ' + currentRoomCode + '</b><br>' +
+                            'Have players join using code <b>' + currentRoomCode + '</b> with their saved hero names!<br><br>' +
+                            '<b>Last Scene:</b><br>' + savedNarrative;
+                        
+                        var box = document.getElementById('dynamic-choices');
+                        box.innerHTML = '<button class="btn btn-green" onclick="broadcastResumeAdventure()">All Heroes Rejoined: Continue Quest</button>';
+                    } else {
+                        document.getElementById('narrative-box').innerHTML = 
+                            '<b>Room Code: ' + currentRoomCode + '</b><br>' +
+                            '⚔️ <b>' + myHero.name + '</b> (' + myHero.role + ') is ready.<br>' +
+                            'Have other devices enter room code <b>' + currentRoomCode + '</b> and tap Join!';
+                        renderHostStartControl();
+                    }
+                });
+            });
+        }
+
+        // 3. PLAYER JOIN
         function joinAsPlayer() {
             try {
                 var codeInput = document.getElementById('join-room-code').value.trim().toUpperCase();
@@ -470,11 +630,23 @@
             document.getElementById('stat-mod').innerText = '+' + myHero.mod;
         }
 
-        // 3. NETWORK MESSAGE DISPATCHER
+        // 4. NETWORK MESSAGE DISPATCHER
         function handleIncomingNetworkMessage(data) {
             if (isHost) {
                 if (data.type === 'JOIN_PARTY') {
-                    if (!party.some(function(p) { return p.id === data.hero.id; })) {
+                    // Check if player matches a saved hero slot to restore stats
+                    var existingIdx = party.findIndex(function(p) { return p.name.toLowerCase() === data.hero.name.toLowerCase(); });
+                    if (existingIdx !== -1) {
+                        party[existingIdx].id = data.hero.id; // Refresh active network id
+                        broadcastToAll({
+                            type: 'RESTORE_HERO_STATS',
+                            hero: party[existingIdx]
+                        });
+                        broadcastToAll({
+                            type: 'SYSTEM_MSG',
+                            text: '⚔️ <b>' + party[existingIdx].name + '</b> (Level ' + party[existingIdx].level + ' ' + party[existingIdx].role + ') has returned!'
+                        });
+                    } else {
                         party.push(data.hero);
                         log("Player joined: " + data.hero.name);
                         broadcastToAll({
@@ -482,6 +654,7 @@
                             text: '⚔️ <b>' + data.hero.name + '</b> the ' + data.hero.role + ' has entered the realm!'
                         });
                     }
+                    saveGameState();
                 } else if (data.type === 'PLAYER_ACTION_CHOSEN') {
                     broadcastToAll({
                         type: 'PROMPT_ROLL',
@@ -500,7 +673,7 @@
             handlePlayerIncomingData(data);
         }
 
-        // 4. PLAYER UI RECEIVER
+        // 5. PLAYER UI RECEIVER
         function handlePlayerIncomingData(data) {
             var narrativeBox = document.getElementById('narrative-box');
             var choicesBox = document.getElementById('dynamic-choices');
@@ -511,6 +684,12 @@
                 narrativeBox.innerHTML += '<br>' + data.text;
                 narrativeBox.scrollTop = narrativeBox.scrollHeight;
             } 
+            else if (data.type === 'RESTORE_HERO_STATS') {
+                if (myHero && myHero.name.toLowerCase() === data.hero.name.toLowerCase()) {
+                    myHero = data.hero;
+                    renderHeroHUD();
+                }
+            }
             else if (data.type === 'LEVEL_UP') {
                 if (myHero && (data.targetHero === myHero.name || data.targetHero === 'ALL')) {
                     myHero.level += 1;
@@ -560,7 +739,7 @@
             }
         }
 
-        // 5. PLAYER OUTGOING ACTIONS
+        // 6. PLAYER ACTIONS & ROLLS
         function selectAction(choice) {
             document.getElementById('dynamic-choices').innerHTML = '';
             document.getElementById('turn-notice').innerText = 'Broadcasting choice...';
@@ -591,10 +770,19 @@
             });
         }
 
-        // 6. HOST AI RESOLUTION
+        // 7. HOST AI ENGINE
         function renderHostStartControl() {
             var box = document.getElementById('dynamic-choices');
             box.innerHTML = '<button class="btn btn-green" onclick="startHostCampaign()">Start Adventure with Joined Heroes</button>';
+        }
+
+        function broadcastResumeAdventure() {
+            document.getElementById('dynamic-choices').innerHTML = '';
+            gameHistory.push({
+                role: "user",
+                parts: [{ text: "The heroes have regrouped and resumed their quest. Summarize the immediate situation and call on a hero to act." }]
+            });
+            fetchAndBroadcastGemini();
         }
 
         async function startHostCampaign() {
@@ -602,14 +790,13 @@
                 alert('Wait for heroes to join.');
                 return;
             }
-            var genre = document.getElementById('host-genre').value;
             var partyRoster = party.map(function(p) { return p.name + ' (Level ' + p.level + ' ' + p.role + ')'; }).join(', ');
 
             gameHistory = [
                 {
                     role: "user",
                     parts: [{
-                        text: 'You are the DM running a ' + genre + ' campaign for: ' + partyRoster + '.\n' +
+                        text: 'You are the DM running a ' + activeGenre + ' campaign for: ' + partyRoster + '.\n' +
 'Format ALL responses strictly as valid JSON with NO markdown code fences or extra text:\n' +
 '{\n' +
 '  "narrative": "scene description",\n' +
@@ -680,6 +867,9 @@
                     targetHero: parsed.targetHero || 'ALL',
                     choices: parsed.choices || []
                 });
+
+                // Auto-save on every successful scene progression
+                saveGameState();
 
             } catch (err) {
                 log('Gemini error: ' + err.message);
