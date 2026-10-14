@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>D&D Mobile Storyteller - Live Party</title>
+    <!-- MQTT over WebSockets for firewall/MDM traversal -->
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --card-bg: #2d2d2d;
+            --text-color: #e0e0e0;
+            --accent-color: #b33939;
+            --accent-hover: #ff5252;
+            --active-gold: #f39c12;
+            --success-green: #27ae60;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            padding: 12px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .screen { display: none; flex-direction: column; height: 100%; }
+        .screen.active { display: flex; }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 16px;
+            border: 1px solid #444;
+            margin-bottom: 12px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+
+        input, select {
+            background: #1a1a1a;
+            color: #fff;
+            border: 1px solid #555;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        #narrative-box {
+            flex: 1;
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 14px;
+            overflow-y: auto;
+            border: 1px solid #444;
+            margin-bottom: 10px;
+            font-size: 1.05rem;
+            line-height: 1.45;
+        }
+
+        .stat-banner {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+            background: #222;
+            border: 1px solid #444;
+            border-radius: 6px;
+            padding: 8px;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .stat-box { font-size: 0.8rem; }
+        .stat-val { font-size: 1.15rem; font-weight: bold; color: var(--active-gold); }
+
+        .btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 12px 14px;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            text-align: center;
+            margin-bottom: 6px;
+            transition: transform 0.1s, background-color 0.2s;
+        }
+
+        .btn:active { transform: scale(0.98); }
+        .btn:disabled {
+            background-color: #555 !important;
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .btn-green { background-color: var(--success-green); }
+
+        #d20-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 8px 0;
+        }
+
+        #d20-btn {
+            background: radial-gradient(circle, #b33939 0%, #801a1a 100%);
+            color: gold;
+            border: 3px solid gold;
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            font-weight: bold;
+            font-size: 1.25rem;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            transition: transform 0.1s, box-shadow 0.2s;
+        }
+
+        #d20-btn:active {
+            transform: scale(0.92) rotate(15deg);
+        }
+
+        #d20-btn.ready-to-roll {
+            border-color: #2ecc71;
+            box-shadow: 0 0 15px #2ecc71;
+            animation: pulse 1.2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+            100% { transform: scale(1); }
+        }
+
+        #d20-btn:disabled {
+            opacity: 0.25;
+            box-shadow: none;
+            cursor: not-allowed;
+            animation: none;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            background: #444;
+        }
+
+        .waiting-text {
+            color: #aaa;
+            text-align: center;
+            font-style: italic;
+            padding: 8px;
+            font-size: 0.9rem;
+        }
+
+        .levelup-banner {
+            background: linear-gradient(90deg, #d35400, #f39c12);
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-weight: bold;
+            margin-top: 8px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SCREEN 1: LOBBY -->
+    <div id="screen-lobby" class="screen active">
+        <h2>Enter Realm</h2>
+        
+        <div class="card">
+            <h3>Host New Adventure (Play & Host)</h3>
+            <p style="font-size: 0.85rem; color:#aaa;">Runs the DM engine and equips your character as player 1.</p>
+            <div class="input-group">
+                <label>Setting / Genre</label>
+                <select id="host-genre">
+                    <option value="Medieval Fantasy">Medieval Fantasy</option>
+                    <option value="Modern Day">Modern Day</option>
+                    <option value="Sci-Fi">Sci-Fi</option>
+                    <option value="Steampunk">Steampunk</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Your Hero Name</label>
+                <input type="text" id="host-hero-name" placeholder="Party Leader">
+            </div>
+            <div class="input-group">
+                <label>Your Role</label>
+                <select id="host-hero-role">
+                    <option value="Warrior">Warrior / Vanguard</option>
+                    <option value="Mage">Mage / Specialist</option>
+                    <option value="Rogue">Rogue / Infiltrator</option>
+                    <option value="Cleric">Cleric / Support</option>
+                </select>
+            </div>
+            <button class="btn btn-green" onclick="setupHost()">Host & Play</button>
+        </div>
+
+        <div class="card">
+            <h3>Join Existing Adventure</h3>
+            <p style="font-size: 0.85rem; color:#aaa;">Connect your phone or tablet to play your hero.</p>
+            <div class="input-group">
+                <label>Room Code (4 Letters)</label>
+                <input type="text" id="join-room-code" placeholder="e.g. DRGN" maxlength="4" style="text-transform: uppercase;">
+            </div>
+            <div class="input-group">
+                <label>Hero Name</label>
+                <input type="text" id="player-hero-name" placeholder="Hero Name">
+            </div>
+            <div class="input-group">
+                <label>Role</label>
+                <select id="player-hero-role">
+                    <option value="Warrior">Warrior / Vanguard</option>
+                    <option value="Mage">Mage / Specialist</option>
+                    <option value="Rogue">Rogue / Infiltrator</option>
+                    <option value="Cleric">Cleric / Support</option>
+                </select>
+            </div>
+            <button class="btn" onclick="joinAsPlayer()">Join Realm</button>
+        </div>
+    </div>
+
+    <!-- SCREEN 2: GAMEPLAY -->
+    <div id="screen-game" class="screen">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
+            <span class="badge" id="display-room-code">Room: ----</span>
+            <span class="badge" id="display-player-role">Connecting...</span>
+        </div>
+
+        <!-- Personal Player Stats -->
+        <div class="stat-banner" id="stats-banner">
+            <div class="stat-box"><span class="stat-val" id="stat-hp">20</span><br>HP</div>
+            <div class="stat-box"><span class="stat-val" id="stat-ac">14</span><br>Armor</div>
+            <div class="stat-box"><span class="stat-val" id="stat-lvl">1</span><br>Level</div>
+            <div class="stat-box"><span class="stat-val" id="stat-mod">+2</span><br>Modifier</div>
+        </div>
+
+        <div id="narrative-box">
+            <em>Connecting to realm...</em>
+        </div>
+
+        <div id="player-controls">
+            <div id="dynamic-choices"></div>
+
+            <div id="d20-container">
+                <button id="d20-btn" disabled onclick="handleD20Roll()">d20</button>
+            </div>
+            <div id="turn-notice" class="waiting-text">Awaiting DM...</div>
+        </div>
+    </div>
+
+    <script>
+        const API_KEY = "AQ.Ab8RN6KoxBba0uWyWBCSI-fGnGOKhEEV_irReIBDXiliaLlLJg"; //[span_0](start_span)[span_0](end_span)
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${API_KEY}`; //[span_1](start_span)[span_1](end_span)
+
+        let mqttClient = null;
+        let isHost = false;
+        let roomCode = "";
+        let currentTopic = "";
+
+        let party = [];
+        let myHero = null;
+        let pendingActionText = "";
+        let gameHistory = [];
+
+        // Connect over standard WSS Port 443
+        function connectBroker(onSuccess) {
+            mqttClient = mqtt.connect('wss://broker.hivemq.com:8884/mqtt');
+
+            mqttClient.on('connect', () => {
+                if (onSuccess) onSuccess();
+            });
+
+            mqttClient.on('message', (topic, message) => {
+                try {
+                    const data = JSON.parse(message.toString());
+                    handleIncomingNetworkMessage(data);
+                } catch (err) {
+                    console.error("Malformed packet:", err);
+                }
+            });
+
+            mqttClient.on('error', (err) => {
+                console.error("Relay connection error:", err);
+                alert("Connection error. Check your network.");
+            });
+        }
+
+        // 1. HOST & PLAY SETUP
+        function setupHost() {
+            roomCode = generateCode(4);
+            currentTopic = `dnd-party-room/${roomCode}`;
+
+            const hostName = document.getElementById('host-hero-name').value.trim() || "Party Leader";
+            const hostRole = document.getElementById('host-hero-role').value;
+
+            myHero = {
+                id: 'hero_' + Math.random().toString(36).substring(2, 9),
+                name: hostName,
+                role: hostRole,
+                level: 1,
+                hp: 20,
+                maxHp: 20,
+                ac: hostRole === "Warrior" ? 16 : 13,
+                mod: 2,
+                xp: 0
+            };
+
+            party.push(myHero);
+
+            connectBroker(() => {
+                isHost = true;
+                mqttClient.subscribe(currentTopic);
+
+                switchScreen('screen-game');
+                document.getElementById('display-room-code').innerText = `Room: ${roomCode}`;
+                document.getElementById('display-player-role').innerText = `${myHero.name} (${myHero.role}) [Host]`;
+                renderHeroHUD();
+
+                document.getElementById('narrative-box').innerHTML = `
+                    <b>Room Code: ${roomCode}</b><br>
+                    ⚔️ <b>${myHero.name}</b> (${myHero.role}) is ready.<br>
+                    Connect other devices with room code <b>${roomCode}</b>. Tap start once assembled!
+                `;
+                renderHostStartControl();
+            });
+        }
+
+        // 2. PLAYER JOIN
+        function joinAsPlayer() {
+            const codeInput = document.getElementById('join-room-code').value.trim().toUpperCase();
+            const nameInput = document.getElementById('player-hero-name').value.trim() || "Adventurer";
+            const roleInput = document.getElementById('player-hero-role').value;
+
+            if (codeInput.length !== 4) {
+                alert("Please enter a valid 4-letter room code.");
+                return;
+            }
+
+            roomCode = codeInput;
+            currentTopic = `dnd-party-room/${roomCode}`;
+
+            myHero = {
+                id: 'hero_' + Math.random().toString(36).substring(2, 9),
+                name: nameInput,
+                role: roleInput,
+                level: 1,
+                hp: 20,
+                maxHp: 20,
+                ac: roleInput === "Warrior" ? 16 : 13,
+                mod: 2,
+                xp: 0
+            };
+
+            connectBroker(() => {
+                mqttClient.subscribe(currentTopic, () => {
+                    switchScreen('screen-game');
+                    document.getElementById('display-room-code').innerText = `Room: ${codeInput}`;
+                    document.getElementById('display-player-role').innerText = `${myHero.name} (${myHero.role})`;
+                    renderHeroHUD();
+
+                    broadcastToAll({
+                        type: 'JOIN_PARTY',
+                        hero: myHero
+                    });
+                });
+            });
+        }
+
+        function renderHeroHUD() {
+            if (!myHero) return;
+            document.getElementById('stat-hp').innerText = `${myHero.hp}/${myHero.maxHp}`;
+            document.getElementById('stat-ac').innerText = myHero.ac;
+            document.getElementById('stat-lvl').innerText = myHero.level;
+            document.getElementById('stat-mod').innerText = `+${myHero.mod}`;
+        }
+
+        // 3. UNIFIED INCOMING MESSAGE DISPATCHER
+        function handleIncomingNetworkMessage(data) {
+            // Host-specific processing
+            if (isHost) {
+                if (data.type === 'JOIN_PARTY') {
+                    if (!party.some(p => p.id === data.hero.id)) {
+                        party.push(data.hero);
+                        broadcastToAll({
+                            type: 'SYSTEM_MSG',
+                            text: `⚔️ <b>${data.hero.name}</b> the ${data.hero.role} has entered the realm!`
+                        });
+                    }
+                } else if (data.type === 'PLAYER_ACTION_CHOSEN') {
+                    broadcastToAll({
+                        type: 'PROMPT_ROLL',
+                        targetHero: data.heroName,
+                        actionText: data.actionText
+                    });
+                } else if (data.type === 'PLAYER_ROLLED') {
+                    broadcastToAll({
+                        type: 'SYSTEM_MSG',
+                        text: `🎲 <b>${data.heroName}</b> rolled a <b>${data.roll}</b> (Total with Mod: <b>${data.total}</b>) for: "${data.actionText}"!`
+                    });
+                    triggerGeminiResolution(data.heroName, data.actionText, data.roll, data.total);
+                }
+            }
+
+            // Universal player UI updates (runs on all screens including host)
+            handlePlayerIncomingData(data);
+        }
+
+        // 4. UI RECEIVER LOGIC
+        function handlePlayerIncomingData(data) {
+            const narrativeBox = document.getElementById('narrative-box');
+            const choicesBox = document.getElementById('dynamic-choices');
+            const turnNotice = document.getElementById('turn-notice');
+            const d20Btn = document.getElementById('d20-btn');
+
+            if (data.type === 'SYSTEM_MSG') {
+                narrativeBox.innerHTML += `<br>${data.text}`;
+                narrativeBox.scrollTop = narrativeBox.scrollHeight;
+            } 
+            else if (data.type === 'LEVEL_UP') {
+                if (myHero && (data.targetHero === myHero.name || data.targetHero === "ALL")) {
+                    myHero.level += 1;
+                    myHero.maxHp += 5;
+                    myHero.hp = myHero.maxHp;
+                    myHero.mod += 1;
+                    renderHeroHUD();
+
+                    narrativeBox.innerHTML += `
+                        <div class="levelup-banner">
+                            🌟 LEVEL UP! ${myHero.name} reached Level ${myHero.level}! HP & Modifier increased!
+                        </div>
+                    `;
+                    narrativeBox.scrollTop = narrativeBox.scrollHeight;
+                }
+            }
+            else if (data.type === 'SCENE_UPDATE') {
+                narrativeBox.innerHTML = data.narrative;
+                choicesBox.innerHTML = '';
+                d20Btn.disabled = true;
+                d20Btn.classList.remove('ready-to-roll');
+
+                if (myHero && (data.targetHero === "ALL" || data.targetHero === myHero.name)) {
+                    turnNotice.innerText = "Your turn! Select your action:";
+                    data.choices.forEach(choice => {
+                        const btn = document.createElement('button');
+                        btn.className = 'btn';
+                        btn.innerText = choice;
+                        btn.onclick = () => selectAction(choice);
+                        choicesBox.appendChild(btn);
+                    });
+                } else {
+                    turnNotice.innerText = `Waiting for ${data.targetHero} to act...`;
+                }
+            } 
+            else if (data.type === 'PROMPT_ROLL') {
+                choicesBox.innerHTML = '';
+                if (myHero && data.targetHero === myHero.name) {
+                    turnNotice.innerText = `Your check! Tap your glowing d20.`;
+                    d20Btn.disabled = false;
+                    d20Btn.classList.add('ready-to-roll');
+                    pendingActionText = data.actionText;
+                } else {
+                    turnNotice.innerText = `${data.targetHero} is rolling the d20...`;
+                    d20Btn.disabled = true;
+                    d20Btn.classList.remove('ready-to-roll');
+                }
+            }
+        }
+
+        // 5. PLAYER OUTGOING ACTIONS & ROLLS
+        function selectAction(choice) {
+            document.getElementById('dynamic-choices').innerHTML = '';
+            document.getElementById('turn-notice').innerText = "Broadcasting choice...";
+            broadcastToAll({
+                type: 'PLAYER_ACTION_CHOSEN',
+                heroName: myHero.name,
+                actionText: choice
+            });
+        }
+
+        function handleD20Roll() {
+            const d20Btn = document.getElementById('d20-btn');
+            d20Btn.disabled = true;
+            d20Btn.classList.remove('ready-to-roll');
+
+            const naturalRoll = Math.floor(Math.random() * 20) + 1; //[span_2](start_span)[span_2](end_span)
+            const totalWithMod = naturalRoll + myHero.mod;
+
+            document.getElementById('turn-notice').innerText = `Rolled ${naturalRoll} + ${myHero.mod} Mod = ${totalWithMod}! Resolving...`;
+
+            broadcastToAll({
+                type: 'PLAYER_ROLLED',
+                heroName: myHero.name,
+                actionText: pendingActionText,
+                roll: naturalRoll,
+                total: totalWithMod
+            });
+        }
+
+        // 6. HOST AI RESOLUTION
+        function renderHostStartControl() {
+            const box = document.getElementById('dynamic-choices');
+            box.innerHTML = `<button class="btn btn-green" onclick="startHostCampaign()">Start Adventure with Joined Heroes</button>`;
+        }
+
+        async function startHostCampaign() {
+            if (party.length === 0) {
+                alert("Wait for heroes to join.");
+                return;
+            }
+            const genre = document.getElementById('host-genre').value;
+            const partyRoster = party.map(p => `${p.name} (Level ${p.level} ${p.role})`).join(', ');
+
+            gameHistory = [
+                {
+                    role: "user",
+                    parts: [{
+                        text: `You are the DM running a ${genre} campaign for: ${partyRoster}.
+Format ALL responses strictly as valid JSON without markdown formatting:
+{
+  "narrative": "scene description",
+  "targetHero": "specific hero name whose turn it is to act, or ALL",
+  "choices": ["Option 1", "Option 2", "Option 3"],
+  "completedTask": false,
+  "levelUpHero": "NONE"
+}
+When an action or battle completes a distinct challenge, set "completedTask": true and set "levelUpHero" to that hero's name (or ALL).`
+                    }]
+                },
+                {
+                    role: "model",
+                    parts: [{ text: JSON.stringify({ narrative: "Ready.", targetHero: "ALL", choices: ["Begin"], completedTask: false, levelUpHero: "NONE" }) }]
+                },
+                {
+                    role: "user",
+                    parts: [{ text: "Begin the quest. Introduce the opening dilemma and call on a specific hero to take the first action." }]
+                }
+            ];
+
+            document.getElementById('dynamic-choices').innerHTML = '';
+            fetchAndBroadcastGemini();
+        }
+
+        async function triggerGeminiResolution(heroName, action, naturalRoll, total) {
+            gameHistory.push({
+                role: "user",
+                parts: [{
+                    text: `[Turn Check] ${heroName} attempted: "${action}".
+Natural d20 Roll: ${naturalRoll}, Total with Modifier: ${total}.
+Describe the outcome. If this roll completes a key task or defeats a foe, set completedTask: true and levelUpHero: "${heroName}". Designate who acts next.`
+                }]
+            });
+            fetchAndBroadcastGemini();
+        }
+
+        async function fetchAndBroadcastGemini() {
+            try {
+                const response = await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ contents: gameHistory }) //[span_3](start_span)[span_3](end_span)
+                });
+
+                const data = await response.json(); //[span_4](start_span)[span_4](end_span)
+                const rawText = data.candidates[0].content.parts[0].text; //[span_5](start_span)[span_5](end_span)
+                const cleanJson = rawText.replace(/```json/g, "").replace(/```/g, "").trim(); //[span_6](start_span)[span_6](end_span)
+                const parsed = JSON.parse(cleanJson); //[span_7](start_span)[span_7](end_span)
+
+                gameHistory.push({ role: "model", parts: [{ text: rawText }] }); //[span_8](start_span)[span_8](end_span)
+
+                if (parsed.completedTask && parsed.levelUpHero && parsed.levelUpHero !== "NONE") {
+                    broadcastToAll({
+                        type: 'LEVEL_UP',
+                        targetHero: parsed.levelUpHero
+                    });
+                }
+
+                broadcastToAll({
+                    type: 'SCENE_UPDATE',
+                    narrative: parsed.narrative,
+                    targetHero: parsed.targetHero || "ALL",
+                    choices: parsed.choices || []
+                });
+
+            } catch (err) {
+                console.error(err);
+                broadcastToAll({
+                    type: 'SYSTEM_MSG',
+                    text: "⚠️ DM communication interrupted. Check connection and try again."
+                });
+            }
+        }
+
+        function broadcastToAll(payload) {
+            if (mqttClient && mqttClient.connected) {
+                mqttClient.publish(currentTopic, JSON.stringify(payload));
+            }
+        }
+
+        function switchScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function generateCode(length) {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let res = '';
+            for (let i = 0; i < length; i++) res += chars.charAt(Math.floor(Math.random() * chars.length));
+            return res;
+        }
+    </script>
+</body>
+</html>
