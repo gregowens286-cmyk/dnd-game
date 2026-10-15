@@ -116,16 +116,20 @@
         }
 
         #narrative-box {
-            flex: 1;
+            flex: 1 1 auto;
+            min-height: 180px;
+            max-height: 38vh;
             background-color: var(--card-bg);
             border-radius: 8px;
             padding: 14px;
             overflow-y: auto;
             border: 1px solid #444;
             margin-bottom: 8px;
-            font-size: 1.05rem;
+            font-size: 1rem;
             line-height: 1.45;
+            -webkit-overflow-scrolling: touch;
         }
+
 
         /* Companion Banner */
         #companion-banner {
@@ -881,165 +885,57 @@
             });
         }
 
-        // --- WEBRTC FIXED ZERO-LOGIN AUDIO MESH ---
+        // --- RELIABLE ZERO-CONFIG WALKIE-TALKIE (OVER RELAY) ---
+        var mediaRecorder = null;
+        var audioChunks = [];
+
         async function toggleMicrophone() {
             var btn = document.getElementById('mic-toggle-btn');
 
             if (!isMicActive) {
                 try {
-                    if (!localMediaStream) {
-                        localMediaStream = await navigator.mediaDevices.getUserMedia({ 
-                            audio: {
-                                echoCancellation: true,
-                                noiseSuppression: true,
-                                autoGainControl: true
-                            }, 
-                            video: false 
-                        });
+                    var stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
 
-                        Object.keys(peerAudioConnections).forEach(function(targetId) {
-                            var pc = peerAudioConnections[targetId];
-                            localMediaStream.getAudioTracks().forEach(function(track) {
-                                pc.addTrack(track, localMediaStream);
+                    mediaRecorder.ondataavailable = function(e) {
+                        if (e.data.size > 0) audioChunks.push(e.data);
+                    };
+
+                    mediaRecorder.onstop = function() {
+                        var audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        var reader = new FileReader();
+                        reader.readAsDataURL(audioBlob);
+                        reader.onloadend = function() {
+                            broadcastToAll({
+                                type: 'WALKIE_TALKIE_AUDIO',
+                                senderName: myHero ? myHero.name : 'Ally',
+                                audioData: reader.result
                             });
-                            renegotiateAudioOffer(targetId);
-                        });
-                    } else {
-                        localMediaStream.getAudioTracks().forEach(function(track) {
-                            track.enabled = true;
-                        });
-                    }
+                        };
+                        // Clean up mic tracks
+                        stream.getTracks().forEach(function(t) { t.stop(); });
+                    };
 
+                    mediaRecorder.start();
                     isMicActive = true;
-                    btn.innerText = "🎙️ Mic: LIVE";
+                    btn.innerText = "🔴 REC (Tap to Send)";
                     btn.className = "btn btn-green";
-                    log("Microphone live.");
-
-                    document.querySelectorAll('audio').forEach(function(a) { a.play().catch(function(){}); });
+                    log("Recording voice transmission...");
 
                 } catch (err) {
-                    alert("Microphone access error: " + err.message);
-                    log("Mic Error: " + err.message);
+                    alert("Mic access error: " + err.message);
                 }
             } else {
-                if (localMediaStream) {
-                    localMediaStream.getAudioTracks().forEach(function(track) {
-                        track.enabled = false;
-                    });
+                // Stop recording and broadcast clip
+                if (mediaRecorder && mediaRecorder.state !== "inactive") {
+                    mediaRecorder.stop();
                 }
                 isMicActive = false;
                 btn.innerText = "🎙️ Mic: OFF";
                 btn.className = "btn";
                 btn.style.backgroundColor = "#555";
-                log("Microphone muted.");
-            }
-        }
-
-        function setupAudioPeer(targetId, isInitiator) {
-            if (peerAudioConnections[targetId]) return peerAudioConnections[targetId];
-
-            var pc = new RTCPeerConnection(rtcConfiguration);
-            peerAudioConnections[targetId] = pc;
-
-            pc.addTransceiver('audio', { direction: 'sendrecv' });
-
-            if (localMediaStream) {
-                localMediaStream.getAudioTracks().forEach(function(track) {
-                    pc.addTrack(track, localMediaStream);
-                });
-            }
-
-            pc.onicecandidate = function(event) {
-                if (event.candidate) {
-                    broadcastToAll({
-                        type: 'VOICE_SIGNAL',
-                        senderId: myClientId,
-                        targetId: targetId,
-                        signalType: 'candidate',
-                        candidate: event.candidate
-                    });
-                }
-            };
-
-            pc.ontrack = function(event) {
-                log("Received remote audio track from " + targetId);
-                var remoteAudio = document.getElementById('audio_player_' + targetId);
-                if (!remoteAudio) {
-                    remoteAudio = document.createElement('audio');
-                    remoteAudio.id = 'audio_player_' + targetId;
-                    remoteAudio.autoplay = true;
-                    remoteAudio.playsInline = true;
-                    document.body.appendChild(remoteAudio);
-                }
-                remoteAudio.srcObject = event.streams[0];
-                
-                var playPromise = remoteAudio.play();
-                if (playPromise !== undefined) {
-                    playPromise.catch(function(error) {
-                        console.warn("Mobile autoplay restriction hit:", error);
-                        window.addEventListener('click', function unlockAudio() {
-                            remoteAudio.play();
-                            window.removeEventListener('click', unlockAudio);
-                        }, { once: true });
-                    });
-                }
-            };
-
-            if (isInitiator) {
-                renegotiateAudioOffer(targetId);
-            }
-
-            return pc;
-        }
-
-        async function renegotiateAudioOffer(targetId) {
-            var pc = peerAudioConnections[targetId];
-            if (!pc) return;
-            try {
-                var offer = await pc.createOffer({
-                    offerToReceiveAudio: true
-                });
-                await pc.setLocalDescription(offer);
-                broadcastToAll({
-                    type: 'VOICE_SIGNAL',
-                    senderId: myClientId,
-                    targetId: targetId,
-                    signalType: 'offer',
-                    sdp: pc.localDescription
-                });
-            } catch (e) {
-                console.error("Audio offer error", e);
-            }
-        }
-
-        async function handleVoiceSignaling(data) {
-            if (data.targetId !== myClientId) return;
-
-            var pc = peerAudioConnections[data.senderId] || setupAudioPeer(data.senderId, false);
-
-            try {
-                if (data.signalType === 'offer') {
-                    await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
-                    var answer = await pc.createAnswer();
-                    await pc.setLocalDescription(answer);
-                    broadcastToAll({
-                        type: 'VOICE_SIGNAL',
-                        senderId: myClientId,
-                        targetId: data.senderId,
-                        signalType: 'answer',
-                        sdp: pc.localDescription
-                    });
-                } else if (data.signalType === 'answer') {
-                    if (pc.signalingState !== "stable") {
-                        await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
-                    }
-                } else if (data.signalType === 'candidate') {
-                    if (data.candidate) {
-                        await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
-                    }
-                }
-            } catch (err) {
-                console.warn("Voice signaling error:", err);
+                log("Transmission sent.");
             }
         }
 
@@ -1391,6 +1287,12 @@
             var choicesBox = document.getElementById('dynamic-choices');
             var turnNotice = document.getElementById('turn-notice');
             var shopBtn = document.getElementById('shop-btn');
+            if (data.type === 'WALKIE_TALKIE_AUDIO') {
+                var audio = new Audio(data.audioData);
+                audio.play().catch(function(e) { console.warn("Audio play prevented:", e); });
+                log("Received voice transmission from " + data.senderName);
+                return;
+            }
 
             if (data.type === 'SYSTEM_MSG') {
                 narrativeBox.innerHTML += '<br>' + data.text;
