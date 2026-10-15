@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>D&D Mobile Storyteller - Live Party</title>
-    <!-- MQTT over WebSockets for State & Voice Signaling -->
+    <!-- MQTT over WebSockets for State & Voice Relay -->
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <style>
         :root {
@@ -22,6 +22,7 @@
 
         html, body {
             height: 100%;
+            height: 100dvh;
             margin: 0;
             padding: 0;
             background-color: var(--bg-color);
@@ -29,18 +30,37 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             box-sizing: border-box;
             overscroll-behavior-y: contain;
+            overflow: hidden;
         }
 
         body {
             display: flex;
             flex-direction: column;
-            padding: 12px;
+            padding: 8px;
             max-width: 800px;
             margin: 0 auto;
+            height: 100%;
+            height: 100dvh;
+            box-sizing: border-box;
         }
 
-        .screen { display: none; flex-direction: column; height: 100%; }
+        .screen { 
+            display: none; 
+            flex-direction: column; 
+            height: 100%; 
+            min-height: 0; 
+            overflow-y: auto; 
+            -webkit-overflow-scrolling: touch;
+        }
         .screen.active { display: flex !important; }
+
+        #screen-game {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            min-height: 0;
+            overflow: hidden;
+        }
 
         .card {
             background-color: var(--card-bg);
@@ -115,41 +135,38 @@
             gap: 8px;
         }
 
+        /* Narrative Box: Flexible Accordion */
         #narrative-box {
             flex: 1 1 auto;
-            min-height: 180px;
-            max-height: 38vh;
+            min-height: 80px;
             background-color: var(--card-bg);
             border-radius: 8px;
-            padding: 14px;
+            padding: 10px 12px;
             overflow-y: auto;
             border: 1px solid #444;
-            margin-bottom: 8px;
-            font-size: 1rem;
-            line-height: 1.45;
+            margin-bottom: 6px;
+            font-size: 0.95rem;
+            line-height: 1.4;
             -webkit-overflow-scrolling: touch;
         }
+
+        /* Action Buttons Area */
         #dynamic-choices {
-            max-height: 32vh;
-            overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 6px;
-            margin-bottom: 6px;
+            gap: 4px;
+            max-height: 28dvh;
+            overflow-y: auto;
+            margin-bottom: 4px;
             -webkit-overflow-scrolling: touch;
         }
 
         #dynamic-choices .btn {
             padding: 8px 10px;
             font-size: 0.85rem;
-            line-height: 1.3;
+            line-height: 1.25;
             margin-bottom: 0;
         }
-
-        #screen-game {
-            overflow-y: auto;
-        }
-
 
         /* Companion Banner */
         #companion-banner {
@@ -249,20 +266,22 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 8px;
-            margin: 8px 0;
-            flex-wrap: wrap;
+            gap: 4px;
+            margin: 4px 0;
+            flex-wrap: nowrap;
+            width: 100%;
         }
 
         .dice-btn {
             background: radial-gradient(circle, #333 0%, #1a1a1a 100%);
             color: #888;
             border: 2px solid #555;
-            min-width: 50px;
-            height: 50px;
-            border-radius: 8px;
+            flex: 1;
+            max-width: 46px;
+            height: 42px;
+            border-radius: 6px;
             font-weight: bold;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             cursor: not-allowed;
             display: flex;
             align-items: center;
@@ -311,8 +330,8 @@
             color: #aaa;
             text-align: center;
             font-style: italic;
-            padding: 6px;
-            font-size: 0.85rem;
+            padding: 4px;
+            font-size: 0.8rem;
         }
 
         .levelup-banner {
@@ -323,6 +342,18 @@
             font-weight: bold;
             margin-top: 8px;
             text-align: center;
+        }
+
+        /* Compact Scaling for Narrow / Short Phones */
+        @media (max-height: 720px), (max-width: 380px) {
+            body { padding: 4px; }
+            .primary-stat-banner { padding: 4px; gap: 4px; margin-bottom: 4px; }
+            .stat-val { font-size: 0.95rem; }
+            .abilities-bar { padding: 2px; margin-bottom: 4px; font-size: 0.65rem; }
+            .utility-bar { padding: 4px 6px; margin-bottom: 4px; }
+            .utility-bar .btn { font-size: 0.75rem; padding: 4px 6px; }
+            #narrative-box { font-size: 0.88rem; padding: 8px 10px; }
+            .dice-btn { height: 36px; font-size: 0.75rem; }
         }
 
         /* Shop Modal */
@@ -568,17 +599,17 @@
 
     <!-- SCREEN 2: GAMEPLAY -->
     <div id="screen-game" class="screen">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
             <span class="badge" id="display-room-code"><span id="net-status-dot" class="status-dot"></span> Room: ----</span>
             <div id="display-player-role">Connecting...</div>
         </div>
 
         <div class="utility-bar">
-            <button id="tts-toggle-btn" class="btn btn-green" style="padding:6px 10px; margin:0; font-size:0.8rem;" onclick="toggleNarrationAudio()">🔊 Narration: ON</button>
-            <button id="haven-btn" class="btn btn-teal" style="padding:6px 10px; margin:0; font-size:0.8rem;" onclick="triggerHavenRest()">🏕️ Haven / Rest</button>
-            <button id="shop-btn" class="btn btn-purple" style="padding:6px 10px; margin:0; font-size:0.8rem; display:none;" onclick="openShopModal()">🛒 Trader Found!</button>
-            <button id="mic-toggle-btn" class="btn" style="padding:6px 10px; margin:0; font-size:0.8rem; background:#555;" onclick="toggleMicrophone()">🎙️ Mic: OFF</button>
-            <button id="save-btn" class="btn btn-blue" style="padding:6px 10px; margin:0; font-size:0.8rem; display:none;" onclick="manualSaveGame()">💾 Save</button>
+            <button id="tts-toggle-btn" class="btn btn-green" style="padding:4px 8px; margin:0; font-size:0.75rem;" onclick="toggleNarrationAudio()">🔊 Narrator</button>
+            <button id="haven-btn" class="btn btn-teal" style="padding:4px 8px; margin:0; font-size:0.75rem;" onclick="triggerHavenRest()">🏕️ Rest</button>
+            <button id="shop-btn" class="btn btn-purple" style="padding:4px 8px; margin:0; font-size:0.75rem; display:none;" onclick="openShopModal()">🛒 Trader</button>
+            <button id="mic-toggle-btn" class="btn" style="padding:4px 8px; margin:0; font-size:0.75rem; background:#555;" onclick="toggleMicrophone()">🎙️ Mic: OFF</button>
+            <button id="save-btn" class="btn btn-blue" style="padding:4px 8px; margin:0; font-size:0.75rem; display:none;" onclick="manualSaveGame()">💾 Save</button>
         </div>
 
         <!-- Companion Banner -->
@@ -602,6 +633,7 @@
             <div class="ability-box"><span>CHA</span><span class="ability-val" id="stat-cha">+0</span></div>
         </div>
 
+        <!-- Story Window -->
         <div id="narrative-box">
             <em>Connecting to realm...</em>
         </div>
@@ -621,7 +653,7 @@
             </div>
             <div id="turn-notice" class="waiting-text">Awaiting DM...</div>
         </div>
-        <div id="debug-log-game" style="font-size:0.7rem; color:#666; font-family:monospace; margin-top:4px;"></div>
+        <div id="debug-log-game" style="font-size:0.7rem; color:#666; font-family:monospace; margin-top:2px;"></div>
     </div>
 
     <!-- SHOP MODAL -->
@@ -670,17 +702,10 @@
         var synth = window.speechSynthesis;
         var narrationEnabled = true;
 
-        var localMediaStream = null;
+        var mediaRecorder = null;
+        var audioChunks = [];
         var isMicActive = false;
-        var peerAudioConnections = {};
         var myClientId = 'client_' + Math.random().toString(36).substring(2, 9);
-
-        var rtcConfiguration = {
-            iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' }
-            ]
-        };
 
         window.addEventListener('DOMContentLoaded', function() {
             if (synth) synth.getVoices();
@@ -721,7 +746,6 @@
                 stats: { STR: 1, DEX: 1, CON: 1, INT: 1, WIS: 1, CHA: 1 }
             };
 
-            // Class Archetype Defaults
             switch (role) {
                 case "Warrior":
                     base.hp = 26; base.maxHp = 26; base.ac = 16;
@@ -745,7 +769,6 @@
                     break;
             }
 
-            // Stack Race / Heritage Bonuses
             switch (race) {
                 case "Human":
                     Object.keys(base.stats).forEach(function(k) { base.stats[k] += 1; });
@@ -804,11 +827,11 @@
             narrationEnabled = !narrationEnabled;
 
             if (narrationEnabled) {
-                btn.innerText = "🔊 Narration: ON";
+                btn.innerText = "🔊 Narrator";
                 btn.className = "btn btn-green";
                 speakNarrative("Narration enabled.");
             } else {
-                btn.innerText = "🔇 Narration: OFF";
+                btn.innerText = "🔇 Narrator";
                 btn.className = "btn";
                 btn.style.backgroundColor = "#555";
                 if (synth) synth.cancel();
@@ -905,10 +928,7 @@
             });
         }
 
-        // --- RELIABLE ZERO-CONFIG WALKIE-TALKIE (OVER RELAY) ---
-        var mediaRecorder = null;
-        var audioChunks = [];
-
+        // --- RELIABLE WALKIE-TALKIE AUDIO OVER MQTT ---
         async function toggleMicrophone() {
             var btn = document.getElementById('mic-toggle-btn');
 
@@ -933,13 +953,12 @@
                                 audioData: reader.result
                             });
                         };
-                        // Clean up mic tracks
                         stream.getTracks().forEach(function(t) { t.stop(); });
                     };
 
                     mediaRecorder.start();
                     isMicActive = true;
-                    btn.innerText = "🔴 REC (Tap to Send)";
+                    btn.innerText = "🔴 REC (Tap Send)";
                     btn.className = "btn btn-green";
                     log("Recording voice transmission...");
 
@@ -947,7 +966,6 @@
                     alert("Mic access error: " + err.message);
                 }
             } else {
-                // Stop recording and broadcast clip
                 if (mediaRecorder && mediaRecorder.state !== "inactive") {
                     mediaRecorder.stop();
                 }
@@ -958,7 +976,6 @@
                 log("Transmission sent.");
             }
         }
-
 
         // --- HAVEN / RESTING MECHANIC ---
         function triggerHavenRest() {
@@ -1246,14 +1263,15 @@
 
         // --- 4. NETWORK DISPATCHER ---
         function handleIncomingNetworkMessage(data) {
-            if (data.type === 'VOICE_SIGNAL') {
-                handleVoiceSignaling(data);
+            if (data.type === 'WALKIE_TALKIE_AUDIO') {
+                var audio = new Audio(data.audioData);
+                audio.play().catch(function(e) { console.warn("Audio play prevented:", e); });
+                log("Received voice transmission from " + data.senderName);
                 return;
             }
 
             if (isHost) {
                 if (data.type === 'JOIN_PARTY') {
-                    setupAudioPeer(data.hero.id, true);
                     var existingIdx = party.findIndex(function(p) { return p.name.toLowerCase() === data.hero.name.toLowerCase(); });
                     if (existingIdx !== -1) {
                         party[existingIdx].id = data.hero.id;
@@ -1307,12 +1325,6 @@
             var choicesBox = document.getElementById('dynamic-choices');
             var turnNotice = document.getElementById('turn-notice');
             var shopBtn = document.getElementById('shop-btn');
-            if (data.type === 'WALKIE_TALKIE_AUDIO') {
-                var audio = new Audio(data.audioData);
-                audio.play().catch(function(e) { console.warn("Audio play prevented:", e); });
-                log("Received voice transmission from " + data.senderName);
-                return;
-            }
 
             if (data.type === 'SYSTEM_MSG') {
                 narrativeBox.innerHTML += '<br>' + data.text;
