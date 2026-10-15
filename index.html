@@ -13,9 +13,10 @@
             --text-color: #e0e0e0;
             --accent-color: #b33939;
             --accent-hover: #ff5252;
-            --active-gold: #f39c12;
+            --active-gold: #f1c40f;
             --success-green: #27ae60;
             --save-blue: #2980b9;
+            --shop-purple: #8e44ad;
         }
 
         html, body {
@@ -64,6 +65,39 @@
             font-size: 1rem;
         }
 
+        /* Avatar Styling */
+        .avatar-creator {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .avatar-preview {
+            width: 86px;
+            height: 86px;
+            border-radius: 50%;
+            border: 3px solid var(--active-gold);
+            background: #1a1a1a;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+
+        .avatar-hud {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 2px solid var(--active-gold);
+            background: #1a1a1a;
+            flex-shrink: 0;
+        }
+
+        .player-info-hud {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
         #narrative-box {
             flex: 1;
             background-color: var(--card-bg);
@@ -78,7 +112,7 @@
 
         .stat-banner {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(5, 1fr);
             gap: 6px;
             background: #222;
             border: 1px solid #444;
@@ -88,8 +122,8 @@
             margin-bottom: 8px;
         }
 
-        .stat-box { font-size: 0.8rem; }
-        .stat-val { font-size: 1.15rem; font-weight: bold; color: var(--active-gold); }
+        .stat-box { font-size: 0.75rem; }
+        .stat-val { font-size: 1.1rem; font-weight: bold; color: var(--active-gold); }
 
         .utility-bar {
             display: flex;
@@ -125,33 +159,40 @@
         }
         .btn-green { background-color: var(--success-green); }
         .btn-blue { background-color: var(--save-blue); }
+        .btn-purple { background-color: var(--shop-purple); }
 
-        #d20-container {
+        /* 7 Polyhedral Dice Bar */
+        #dice-container {
             display: flex;
             justify-content: center;
             align-items: center;
-            margin: 8px 0;
+            gap: 8px;
+            margin: 10px 0;
+            flex-wrap: wrap;
         }
 
-        #d20-btn {
-            background: radial-gradient(circle, #b33939 0%, #801a1a 100%);
-            color: gold;
-            border: 3px solid gold;
-            width: 72px;
-            height: 72px;
-            border-radius: 50%;
+        .dice-btn {
+            background: radial-gradient(circle, #333 0%, #1a1a1a 100%);
+            color: #888;
+            border: 2px solid #555;
+            min-width: 52px;
+            height: 52px;
+            border-radius: 8px;
             font-weight: bold;
-            font-size: 1.25rem;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            font-size: 0.95rem;
+            cursor: not-allowed;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             transition: transform 0.1s, box-shadow 0.2s;
         }
 
-        #d20-btn:active { transform: scale(0.92) rotate(15deg); }
-
-        #d20-btn.ready-to-roll {
+        .dice-btn.ready-to-roll {
+            background: radial-gradient(circle, #b33939 0%, #801a1a 100%);
+            color: var(--active-gold);
             border-color: #2ecc71;
             box-shadow: 0 0 15px #2ecc71;
+            cursor: pointer;
             animation: pulse 1.2s infinite;
         }
 
@@ -159,13 +200,6 @@
             0% { transform: scale(1); }
             50% { transform: scale(1.08); }
             100% { transform: scale(1); }
-        }
-
-        #d20-btn:disabled {
-            opacity: 0.25;
-            box-shadow: none;
-            cursor: not-allowed;
-            animation: none;
         }
 
         .badge {
@@ -194,8 +228,8 @@
             color: #aaa;
             text-align: center;
             font-style: italic;
-            padding: 8px;
-            font-size: 0.9rem;
+            padding: 6px;
+            font-size: 0.85rem;
         }
 
         .levelup-banner {
@@ -206,6 +240,40 @@
             font-weight: bold;
             margin-top: 8px;
             text-align: center;
+        }
+
+        /* Shop Modal */
+        #shop-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 100;
+            padding: 16px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #shop-content {
+            background: var(--card-bg);
+            border: 2px solid var(--active-gold);
+            border-radius: 10px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        .shop-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #222;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            border: 1px solid #444;
         }
 
         #debug-log {
@@ -234,6 +302,12 @@
             <div id="resume-container" style="display:none; margin-bottom: 12px; border-bottom: 1px solid #444; padding-bottom: 12px;">
                 <button class="btn btn-blue" style="width: 100%;" onclick="resumeSavedGame()">📂 Resume Saved Campaign</button>
                 <div id="save-info" style="font-size: 0.8rem; color: #aaa; margin-top: 4px;"></div>
+            </div>
+
+            <!-- Host Avatar Customizer -->
+            <div class="avatar-creator">
+                <img id="host-avatar-img" class="avatar-preview" src="https://api.dicebear.com/9.x/adventurer/svg?seed=PartyLeader">
+                <button type="button" class="btn btn-purple" style="padding: 6px 14px; margin: 0; font-size: 0.85rem;" onclick="randomizeAvatar('host')">🎨 Shuffle Avatar</button>
             </div>
 
             <div class="input-group">
@@ -272,6 +346,13 @@
         <div class="card">
             <h3>Join Existing Adventure</h3>
             <p style="font-size: 0.85rem; color:#aaa;">Connect your phone or tablet to play your hero.</p>
+
+            <!-- Player Avatar Customizer -->
+            <div class="avatar-creator">
+                <img id="player-avatar-img" class="avatar-preview" src="https://api.dicebear.com/9.x/adventurer/svg?seed=Adventurer">
+                <button type="button" class="btn btn-purple" style="padding: 6px 14px; margin: 0; font-size: 0.85rem;" onclick="randomizeAvatar('player')">🎨 Shuffle Avatar</button>
+            </div>
+
             <div class="input-group">
                 <label>Room Code (4 Letters)</label>
                 <input type="text" id="join-room-code" placeholder="e.g. HERO" maxlength="4" style="text-transform: uppercase;">
@@ -306,21 +387,22 @@
     <div id="screen-game" class="screen">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
             <span class="badge" id="display-room-code"><span id="net-status-dot" class="status-dot"></span> Room: ----</span>
-            <span class="badge" id="display-player-role">Connecting...</span>
+            <div id="display-player-role">Connecting...</div>
         </div>
 
-        <!-- Integrated Utility Bar (Narration Toggle, Native Mic & Save) -->
         <div class="utility-bar">
             <button id="tts-toggle-btn" class="btn btn-green" style="padding:6px 10px; margin:0; font-size:0.8rem;" onclick="toggleNarrationAudio()">🔊 Narration: ON</button>
+            <button id="shop-btn" class="btn btn-purple" style="padding:6px 10px; margin:0; font-size:0.8rem;" onclick="openShopModal()">🛒 Shop</button>
             <button id="mic-toggle-btn" class="btn" style="padding:6px 10px; margin:0; font-size:0.8rem; background:#555;" onclick="toggleMicrophone()">🎙️ Mic: OFF</button>
             <button id="save-btn" class="btn btn-blue" style="padding:6px 10px; margin:0; font-size:0.8rem; display:none;" onclick="manualSaveGame()">💾 Save</button>
         </div>
 
         <div class="stat-banner" id="stats-banner">
-            <div class="stat-box"><span class="stat-val" id="stat-hp">20</span><br>HP</div>
-            <div class="stat-box"><span class="stat-val" id="stat-ac">14</span><br>Armor</div>
+            <div class="stat-box"><span class="stat-val" id="stat-hp">20/20</span><br>HP</div>
+            <div class="stat-box"><span class="stat-val" id="stat-ac">13</span><br>Armor</div>
             <div class="stat-box"><span class="stat-val" id="stat-lvl">1</span><br>Level</div>
-            <div class="stat-box"><span class="stat-val" id="stat-mod">+2</span><br>Modifier</div>
+            <div class="stat-box"><span class="stat-val" id="stat-mod">+2</span><br>Mod</div>
+            <div class="stat-box"><span class="stat-val" id="stat-gil">50</span><br>Gil</div>
         </div>
 
         <div id="narrative-box">
@@ -330,12 +412,31 @@
         <div id="player-controls">
             <div id="dynamic-choices"></div>
 
-            <div id="d20-container">
-                <button id="d20-btn" disabled onclick="handleD20Roll()">d20</button>
+            <!-- 7 Polyhedral Dice Bar -->
+            <div id="dice-container">
+                <button id="die-d4" class="dice-btn" onclick="handleRoll(4)">d4</button>
+                <button id="die-d6" class="dice-btn" onclick="handleRoll(6)">d6</button>
+                <button id="die-d8" class="dice-btn" onclick="handleRoll(8)">d8</button>
+                <button id="die-d10" class="dice-btn" onclick="handleRoll(10)">d10</button>
+                <button id="die-d12" class="dice-btn" onclick="handleRoll(12)">d12</button>
+                <button id="die-d20" class="dice-btn" onclick="handleRoll(20)">d20</button>
+                <button id="die-d100" class="dice-btn" onclick="handleRoll(100)">d100</button>
             </div>
             <div id="turn-notice" class="waiting-text">Awaiting DM...</div>
         </div>
         <div id="debug-log-game" style="font-size:0.7rem; color:#666; font-family:monospace; margin-top:4px;"></div>
+    </div>
+
+    <!-- SHOP MODAL -->
+    <div id="shop-modal" onclick="closeShopModal(event)">
+        <div id="shop-content">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <h3 style="margin:0; color:var(--active-gold);">Merchant's Bazaar</h3>
+                <span style="font-size:0.9rem;">Your Gil: <b id="shop-gil-display" style="color:var(--active-gold);">0</b></span>
+            </div>
+            <div id="shop-inventory-list"></div>
+            <button class="btn btn-blue" style="width:100%; margin-top:10px;" onclick="closeShopModalDirect()">Leave Bazaar</button>
+        </div>
     </div>
 
     <script>
@@ -352,14 +453,25 @@
         var party = [];
         var myHero = null;
         var pendingActionText = "";
+        var requiredDieSides = 20;
         var gameHistory = [];
         var activeGenre = "Medieval Fantasy";
 
-        // Native Speech Synthesis Narration Toggle
+        // Avatar Seeds
+        var hostAvatarSeed = "PartyLeader_" + Math.random().toString(36).substring(2, 7);
+        var playerAvatarSeed = "Adventurer_" + Math.random().toString(36).substring(2, 7);
+
+        // Store Inventory (Cost & Stat Buffs)
+        var STORE_ITEMS = [
+            { id: "potion_hp", name: "Health Elixir", cost: 25, hpBuff: 10, acBuff: 0, modBuff: 0, desc: "+10 Max & Current HP" },
+            { id: "iron_shield", name: "Reinforced Shield", cost: 50, hpBuff: 0, acBuff: 2, modBuff: 0, desc: "+2 Armor Class" },
+            { id: "mithril_ring", name: "Amulet of Focus", cost: 75, hpBuff: 0, acBuff: 0, modBuff: 1, desc: "+1 to All Roll Modifiers" },
+            { id: "dragon_plate", name: "Titan's Plate", cost: 120, hpBuff: 15, acBuff: 3, modBuff: 1, desc: "+15 HP, +3 Armor, +1 Mod" }
+        ];
+
         var synth = window.speechSynthesis;
         var narrationEnabled = true;
 
-        // Native WebRTC Audio Mesh variables
         var localMediaStream = null;
         var isMicActive = false;
         var peerAudioConnections = {};
@@ -373,13 +485,12 @@
         };
 
         window.addEventListener('DOMContentLoaded', function() {
-            if (synth) {
-                synth.getVoices();
-            }
+            if (synth) synth.getVoices();
+            document.getElementById('host-avatar-img').src = getAvatarUrl(hostAvatarSeed);
+            document.getElementById('player-avatar-img').src = getAvatarUrl(playerAvatarSeed);
             checkExistingSave();
         });
 
-        // Accidental refresh / navigation protection
         window.addEventListener('beforeunload', function(e) {
             var gameScreen = document.getElementById('screen-game');
             if (gameScreen && gameScreen.classList.contains('active')) {
@@ -405,7 +516,23 @@
             }
         }
 
-        // --- NARRATION SPEECH SYNTHESIS ENGINE ---
+        // --- AVATAR ENGINE ---
+        function getAvatarUrl(seed) {
+            return 'https://api.dicebear.com/9.x/adventurer/svg?seed=' + encodeURIComponent(seed);
+        }
+
+        function randomizeAvatar(target) {
+            var newSeed = (target === 'host' ? 'Leader_' : 'Hero_') + Math.random().toString(36).substring(2, 8);
+            if (target === 'host') {
+                hostAvatarSeed = newSeed;
+                document.getElementById('host-avatar-img').src = getAvatarUrl(hostAvatarSeed);
+            } else {
+                playerAvatarSeed = newSeed;
+                document.getElementById('player-avatar-img').src = getAvatarUrl(playerAvatarSeed);
+            }
+        }
+
+        // --- NARRATION ---
         function toggleNarrationAudio() {
             var btn = document.getElementById('tts-toggle-btn');
             narrationEnabled = !narrationEnabled;
@@ -413,7 +540,6 @@
             if (narrationEnabled) {
                 btn.innerText = "🔊 Narration: ON";
                 btn.className = "btn btn-green";
-                btn.style.backgroundColor = "var(--success-green)";
                 speakNarrative("Narration enabled.");
             } else {
                 btn.innerText = "🔇 Narration: OFF";
@@ -425,14 +551,12 @@
 
         function speakNarrative(textToSpeak) {
             if (!synth || !narrationEnabled) return;
-
             synth.cancel();
             var cleanText = textToSpeak.replace(/<[^>]*>?/gm, '').trim();
             if (!cleanText) return;
 
             var utterance = new SpeechSynthesisUtterance(cleanText);
             utterance.lang = 'en-US';
-
             var voices = synth.getVoices().filter(function(v) { return v.lang.startsWith('en'); });
             var selectedVoice = voices.find(function(v) { 
                 return v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('en-GB'); 
@@ -442,7 +566,6 @@
 
             utterance.rate = 0.90;
             utterance.pitch = 1.1;
-
             synth.speak(utterance);
         }
 
@@ -452,7 +575,7 @@
                 try {
                     var parsed = JSON.parse(savedData);
                     document.getElementById('resume-container').style.display = 'block';
-                    var rosterNames = parsed.party.map(function(p) { return p.name + " (" + (p.gender || "she/her") + ", Lvl " + p.level + ")"; }).join(", ");
+                    var rosterNames = parsed.party.map(function(p) { return p.name + " (" + (p.gender || "she/her") + ", " + (p.gil || 0) + " Gil)"; }).join(", ");
                     document.getElementById('save-info').innerText = "Saved: " + parsed.genre + " (" + rosterNames + ") - " + parsed.date;
                 } catch (e) {}
             }
@@ -515,28 +638,22 @@
             });
         }
 
-        // --- NATIVE ZERO-LOGIN AUDIO MESH ENGINE ---
+        // Voice Signatures
         async function toggleMicrophone() {
             var btn = document.getElementById('mic-toggle-btn');
-
             if (!isMicActive) {
                 try {
                     localMediaStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
                     isMicActive = true;
                     btn.innerText = "🎙️ Mic: LIVE";
                     btn.style.backgroundColor = "var(--success-green)";
-                    
                     Object.keys(peerAudioConnections).forEach(function(targetId) {
                         var pc = peerAudioConnections[targetId];
-                        localMediaStream.getAudioTracks().forEach(function(track) {
-                            pc.addTrack(track, localMediaStream);
-                        });
+                        localMediaStream.getAudioTracks().forEach(function(track) { pc.addTrack(track, localMediaStream); });
                         renegotiateAudioOffer(targetId);
                     });
-
-                    log("Microphone active.");
                 } catch (err) {
-                    alert("Could not access microphone: " + err.message);
+                    alert("Mic error: " + err.message);
                 }
             } else {
                 if (localMediaStream) {
@@ -546,34 +663,21 @@
                 isMicActive = false;
                 btn.innerText = "🎙️ Mic: OFF";
                 btn.style.backgroundColor = "#555";
-                log("Microphone muted.");
             }
         }
 
         function setupAudioPeer(targetId, isInitiator) {
             if (peerAudioConnections[targetId]) return peerAudioConnections[targetId];
-
             var pc = new RTCPeerConnection(rtcConfiguration);
             peerAudioConnections[targetId] = pc;
-
             if (localMediaStream) {
-                localMediaStream.getAudioTracks().forEach(function(track) {
-                    pc.addTrack(track, localMediaStream);
-                });
+                localMediaStream.getAudioTracks().forEach(function(track) { pc.addTrack(track, localMediaStream); });
             }
-
             pc.onicecandidate = function(event) {
                 if (event.candidate) {
-                    broadcastToAll({
-                        type: 'VOICE_SIGNAL',
-                        senderId: myClientId,
-                        targetId: targetId,
-                        signalType: 'candidate',
-                        candidate: event.candidate
-                    });
+                    broadcastToAll({ type: 'VOICE_SIGNAL', senderId: myClientId, targetId: targetId, signalType: 'candidate', candidate: event.candidate });
                 }
             };
-
             pc.ontrack = function(event) {
                 var remoteAudio = document.getElementById('audio_player_' + targetId);
                 if (!remoteAudio) {
@@ -584,11 +688,7 @@
                 }
                 remoteAudio.srcObject = event.streams[0];
             };
-
-            if (isInitiator) {
-                renegotiateAudioOffer(targetId);
-            }
-
+            if (isInitiator) renegotiateAudioOffer(targetId);
             return pc;
         }
 
@@ -598,44 +698,99 @@
             try {
                 var offer = await pc.createOffer();
                 await pc.setLocalDescription(offer);
-                broadcastToAll({
-                    type: 'VOICE_SIGNAL',
-                    senderId: myClientId,
-                    targetId: targetId,
-                    signalType: 'offer',
-                    sdp: pc.localDescription
-                });
-            } catch (e) {
-                console.error("Audio offer error", e);
-            }
+                broadcastToAll({ type: 'VOICE_SIGNAL', senderId: myClientId, targetId: targetId, signalType: 'offer', sdp: pc.localDescription });
+            } catch (e) {}
         }
 
         async function handleVoiceSignaling(data) {
             if (data.targetId !== myClientId) return;
-
             var pc = peerAudioConnections[data.senderId] || setupAudioPeer(data.senderId, false);
-
             if (data.signalType === 'offer') {
                 await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
                 var answer = await pc.createAnswer();
                 await pc.setLocalDescription(answer);
-                broadcastToAll({
-                    type: 'VOICE_SIGNAL',
-                    senderId: myClientId,
-                    targetId: data.senderId,
-                    signalType: 'answer',
-                    sdp: pc.localDescription
-                });
+                broadcastToAll({ type: 'VOICE_SIGNAL', senderId: myClientId, targetId: data.senderId, signalType: 'answer', sdp: pc.localDescription });
             } else if (data.signalType === 'answer') {
                 await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
             } else if (data.signalType === 'candidate') {
-                try {
-                    await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
-                } catch (e) {}
+                try { await pc.addIceCandidate(new RTCIceCandidate(data.candidate)); } catch (e) {}
             }
         }
 
-        // --- 1. HOST SETUP (NEW GAME) ---
+        // --- SHOP ENGINE ---
+        function openShopModal() {
+            if (!myHero) return;
+            document.getElementById('shop-gil-display').innerText = myHero.gil;
+            var listEl = document.getElementById('shop-inventory-list');
+            listEl.innerHTML = '';
+
+            STORE_ITEMS.forEach(function(item) {
+                var itemRow = document.createElement('div');
+                itemRow.className = 'shop-item';
+                var alreadyOwned = myHero.inventory && myHero.inventory.includes(item.id);
+
+                itemRow.innerHTML = 
+                    '<div>' +
+                        '<b>' + item.name + '</b> (' + item.cost + ' Gil)<br>' +
+                        '<span style="font-size:0.8rem; color:#aaa;">' + item.desc + '</span>' +
+                    '</div>';
+
+                var buyBtn = document.createElement('button');
+                buyBtn.className = 'btn btn-green';
+                buyBtn.style.margin = '0';
+                buyBtn.style.padding = '6px 12px';
+
+                if (alreadyOwned) {
+                    buyBtn.innerText = 'Equipped';
+                    buyBtn.disabled = true;
+                } else if (myHero.gil < item.cost) {
+                    buyBtn.innerText = 'Need Gil';
+                    buyBtn.disabled = true;
+                } else {
+                    buyBtn.innerText = 'Buy';
+                    buyBtn.onclick = function() { buyItem(item); };
+                }
+
+                itemRow.appendChild(buyBtn);
+                listEl.appendChild(itemRow);
+            });
+
+            document.getElementById('shop-modal').style.display = 'flex';
+        }
+
+        function closeShopModal(e) {
+            if (e.target.id === 'shop-modal') closeShopModalDirect();
+        }
+
+        function closeShopModalDirect() {
+            document.getElementById('shop-modal').style.display = 'none';
+        }
+
+        function buyItem(item) {
+            if (!myHero || myHero.gil < item.cost) return;
+
+            myHero.gil -= item.cost;
+            if (!myHero.inventory) myHero.inventory = [];
+            myHero.inventory.push(item.id);
+
+            // Apply Buffs
+            myHero.maxHp += item.hpBuff;
+            myHero.hp += item.hpBuff;
+            myHero.ac += item.acBuff;
+            myHero.mod += item.modBuff;
+
+            renderHeroHUD();
+            openShopModal();
+
+            broadcastToAll({
+                type: 'HERO_PURCHASE',
+                heroName: myHero.name,
+                itemName: item.name,
+                hero: myHero
+            });
+        }
+
+        // --- 1. HOST SETUP ---
         function setupHost() {
             try {
                 currentRoomCode = generateCode(4);
@@ -651,25 +806,26 @@
                     name: hostName,
                     gender: hostGender,
                     role: hostRole,
+                    avatar: getAvatarUrl(hostAvatarSeed),
                     level: 1,
                     hp: 20,
                     maxHp: 20,
                     ac: hostRole === "Warrior" ? 16 : 13,
                     mod: 2,
+                    gil: 50,
+                    inventory: [],
                     xp: 0
                 };
 
                 party = [myHero];
                 gameHistory = [];
-
                 startHostSession(false);
             } catch (e) {
                 alert("Host startup failed: " + e.message);
-                log("Error: " + e.message);
             }
         }
 
-        // --- 2. HOST RESUME GAME ---
+        // --- 2. HOST RESUME ---
         function resumeSavedGame() {
             var savedData = localStorage.getItem('dnd_multiplayer_save');
             if (!savedData) return;
@@ -683,6 +839,9 @@
 
             myHero = party[0];
             myHero.id = myClientId;
+            if (!myHero.gil) myHero.gil = 50;
+            if (!myHero.inventory) myHero.inventory = [];
+            if (!myHero.avatar) myHero.avatar = getAvatarUrl(myHero.name);
 
             startHostSession(true, parsed.narrative);
         }
@@ -690,7 +849,6 @@
         function startHostSession(isResumed, savedNarrative) {
             switchScreen('screen-game');
             document.getElementById('display-room-code').innerHTML = '<span id="net-status-dot" class="status-dot"></span> Room: ' + currentRoomCode;
-            document.getElementById('display-player-role').innerText = myHero.name + ' (' + myHero.role + ') [Host]';
             document.getElementById('save-btn').style.display = 'inline-block';
             renderHeroHUD();
 
@@ -703,22 +861,15 @@
                 isHost = true;
                 mqttClient.subscribe(currentTopic, function() {
                     log("Host subscribed to: " + currentRoomCode);
-                    
                     if (isResumed) {
                         document.getElementById('narrative-box').innerHTML = 
                             '<b>Resuming Campaign: ' + activeGenre + '</b><br>' +
                             '<b>Room Code: ' + currentRoomCode + '</b><br>' +
-                            'Have players join using code <b>' + currentRoomCode + '</b> with their saved hero names!<br><br>' +
                             '<b>Last Scene:</b><br>' + savedNarrative;
-                        
                         var box = document.getElementById('dynamic-choices');
                         box.innerHTML = '<button class="btn btn-green" onclick="broadcastResumeAdventure()">All Heroes Rejoined: Continue Quest</button>';
-                        speakNarrative("Campaign resumed. Awaiting party rejoin.");
+                        speakNarrative("Campaign resumed.");
                     } else {
-                        document.getElementById('narrative-box').innerHTML = 
-                            '<b>Room Code: ' + currentRoomCode + '</b><br>' +
-                            '⚔️ <b>' + myHero.name + '</b> (' + myHero.gender + ', ' + myHero.role + ') is ready.<br>' +
-                            'Have other devices enter room code <b>' + currentRoomCode + '</b> and tap Join!';
                         renderHostStartControl();
                         speakNarrative("Room created. Room code is " + currentRoomCode.split('').join(' '));
                     }
@@ -747,37 +898,31 @@
                     name: nameInput,
                     gender: genderInput,
                     role: roleInput,
+                    avatar: getAvatarUrl(playerAvatarSeed),
                     level: 1,
                     hp: 20,
                     maxHp: 20,
                     ac: roleInput === "Warrior" ? 16 : 13,
                     mod: 2,
+                    gil: 50,
+                    inventory: [],
                     xp: 0
                 };
 
                 switchScreen('screen-game');
                 document.getElementById('display-room-code').innerHTML = '<span id="net-status-dot" class="status-dot"></span> Room: ' + codeInput;
-                document.getElementById('display-player-role').innerText = myHero.name + ' (' + myHero.role + ')';
                 renderHeroHUD();
-                document.getElementById('narrative-box').innerHTML = '<em>Connecting to room ' + codeInput + '...</em>';
 
                 connectBroker(function() {
                     mqttClient.subscribe(currentTopic, function() {
-                        log("Player connected to room " + currentRoomCode);
+                        log("Connected to room " + currentRoomCode);
                         document.getElementById('narrative-box').innerHTML = '<em>Connected to room ' + codeInput + '! Waiting for Host to start...</em>';
-
-                        broadcastToAll({
-                            type: 'JOIN_PARTY',
-                            hero: myHero
-                        });
-
-                        speakNarrative("Connected to room " + codeInput + ". Waiting for adventure start.");
+                        broadcastToAll({ type: 'JOIN_PARTY', hero: myHero });
+                        speakNarrative("Connected to room " + codeInput);
                     });
                 });
-
             } catch (e) {
                 alert("Join error: " + e.message);
-                log("Error: " + e.message);
             }
         }
 
@@ -787,6 +932,16 @@
             document.getElementById('stat-ac').innerText = myHero.ac;
             document.getElementById('stat-lvl').innerText = myHero.level;
             document.getElementById('stat-mod').innerText = '+' + myHero.mod;
+            document.getElementById('stat-gil').innerText = myHero.gil || 0;
+
+            var roleEl = document.getElementById('display-player-role');
+            if (roleEl) {
+                roleEl.innerHTML = 
+                    '<div class="player-info-hud">' +
+                        '<img src="' + (myHero.avatar || getAvatarUrl(myHero.name)) + '" class="avatar-hud">' +
+                        '<span class="badge">' + myHero.name + ' (' + myHero.role + ')' + (isHost ? ' [Host]' : '') + '</span>' +
+                    '</div>';
+            }
         }
 
         // --- 4. NETWORK DISPATCHER ---
@@ -799,25 +954,18 @@
             if (isHost) {
                 if (data.type === 'JOIN_PARTY') {
                     setupAudioPeer(data.hero.id, true);
-
                     var existingIdx = party.findIndex(function(p) { return p.name.toLowerCase() === data.hero.name.toLowerCase(); });
                     if (existingIdx !== -1) {
                         party[existingIdx].id = data.hero.id;
                         if (data.hero.gender) party[existingIdx].gender = data.hero.gender;
-                        broadcastToAll({
-                            type: 'RESTORE_HERO_STATS',
-                            hero: party[existingIdx]
-                        });
-                        broadcastToAll({
-                            type: 'SYSTEM_MSG',
-                            text: '⚔️ <b>' + party[existingIdx].name + '</b> (Level ' + party[existingIdx].level + ' ' + party[existingIdx].role + ') has returned!'
-                        });
+                        if (data.hero.avatar) party[existingIdx].avatar = data.hero.avatar;
+                        broadcastToAll({ type: 'RESTORE_HERO_STATS', hero: party[existingIdx] });
+                        broadcastToAll({ type: 'SYSTEM_MSG', text: '⚔️ <b>' + party[existingIdx].name + '</b> has returned!' });
                     } else {
                         party.push(data.hero);
-                        log("Player joined: " + data.hero.name);
-                        broadcastToAll({
-                            type: 'SYSTEM_MSG',
-                            text: '⚔️ <b>' + data.hero.name + '</b> (' + data.hero.gender + ') the ' + data.hero.role + ' has entered the realm!'
+                        broadcastToAll({ 
+                            type: 'SYSTEM_MSG', 
+                            text: '⚔️ <img src="' + (data.hero.avatar || getAvatarUrl(data.hero.name)) + '" class="avatar-hud" style="vertical-align:middle; width:24px; height:24px; margin-right:4px;"><b>' + data.hero.name + '</b> (' + data.hero.gender + ') entered the realm!' 
                         });
                     }
                     saveGameState();
@@ -825,14 +973,23 @@
                     broadcastToAll({
                         type: 'PROMPT_ROLL',
                         targetHero: data.heroName,
-                        actionText: data.actionText
+                        actionText: data.actionText,
+                        dieType: data.dieType || 20
                     });
                 } else if (data.type === 'PLAYER_ROLLED') {
                     broadcastToAll({
                         type: 'SYSTEM_MSG',
-                        text: '🎲 <b>' + data.heroName + '</b> rolled a <b>' + data.roll + '</b> (Total: <b>' + data.total + '</b>) for: "' + data.actionText + '"!'
+                        text: '🎲 <b>' + data.heroName + '</b> rolled <b>' + data.roll + '</b> on a d' + data.dieType + ' (Total: <b>' + data.total + '</b>) for: "' + data.actionText + '"!'
                     });
-                    triggerGeminiResolution(data.heroName, data.actionText, data.roll, data.total);
+                    triggerGeminiResolution(data.heroName, data.actionText, data.roll, data.total, data.dieType);
+                } else if (data.type === 'HERO_PURCHASE') {
+                    var pIndex = party.findIndex(function(p) { return p.name.toLowerCase() === data.heroName.toLowerCase(); });
+                    if (pIndex !== -1) party[pIndex] = data.hero;
+                    broadcastToAll({
+                        type: 'SYSTEM_MSG',
+                        text: '🛒 <b>' + data.heroName + '</b> purchased <b>' + data.itemName + '</b>!'
+                    });
+                    saveGameState();
                 }
             }
 
@@ -844,7 +1001,6 @@
             var narrativeBox = document.getElementById('narrative-box');
             var choicesBox = document.getElementById('dynamic-choices');
             var turnNotice = document.getElementById('turn-notice');
-            var d20Btn = document.getElementById('d20-btn');
 
             if (data.type === 'SYSTEM_MSG') {
                 narrativeBox.innerHTML += '<br>' + data.text;
@@ -864,28 +1020,32 @@
                     myHero.hp = myHero.maxHp;
                     myHero.mod += 1;
                     renderHeroHUD();
-
-                    narrativeBox.innerHTML += 
-                        '<div class="levelup-banner">' +
-                        '🌟 LEVEL UP! ' + myHero.name + ' reached Level ' + myHero.level + '! HP & Modifier increased!' +
-                        '</div>';
+                    narrativeBox.innerHTML += '<div class="levelup-banner">🌟 LEVEL UP! ' + myHero.name + ' reached Level ' + myHero.level + '! HP & Mod increased!</div>';
                     narrativeBox.scrollTop = narrativeBox.scrollHeight;
                     speakNarrative("Level up! " + myHero.name + " reached level " + myHero.level);
+                }
+            }
+            else if (data.type === 'AWARD_GIL') {
+                if (myHero && (data.targetHero === myHero.name || data.targetHero === 'ALL')) {
+                    myHero.gil = (myHero.gil || 0) + data.amount;
+                    renderHeroHUD();
+                    narrativeBox.innerHTML += '<br><b style="color:var(--active-gold);">💰 Found ' + data.amount + ' Gil!</b>';
+                    narrativeBox.scrollTop = narrativeBox.scrollHeight;
+                    speakNarrative("You found " + data.amount + " Gil!");
                 }
             }
             else if (data.type === 'SCENE_UPDATE') {
                 narrativeBox.innerHTML = data.narrative;
                 choicesBox.innerHTML = '';
-                d20Btn.disabled = true;
-                d20Btn.classList.remove('ready-to-roll');
+                disableAllDice();
 
                 if (myHero && (data.targetHero === 'ALL' || data.targetHero === myHero.name)) {
                     turnNotice.innerText = 'Your turn! Select your action:';
                     data.choices.forEach(function(choice) {
                         var btn = document.createElement('button');
                         btn.className = 'btn';
-                        btn.innerText = choice;
-                        btn.onclick = function() { selectAction(choice); };
+                        btn.innerText = choice.text;
+                        btn.onclick = function() { selectAction(choice.text, choice.dieType || 20); };
                         choicesBox.appendChild(btn);
                     });
                     speakNarrative(data.narrative + ". It is your turn to act.");
@@ -896,50 +1056,58 @@
             } 
             else if (data.type === 'PROMPT_ROLL') {
                 choicesBox.innerHTML = '';
+                disableAllDice();
+
                 if (myHero && data.targetHero === myHero.name) {
-                    turnNotice.innerText = 'Your check! Tap your glowing d20.';
-                    d20Btn.disabled = false;
-                    d20Btn.classList.add('ready-to-roll');
+                    requiredDieSides = data.dieType || 20;
+                    turnNotice.innerText = 'Your check! Roll your glowing d' + requiredDieSides + '!';
+                    var activeDie = document.getElementById('die-d' + requiredDieSides);
+                    if (activeDie) {
+                        activeDie.classList.add('ready-to-roll');
+                    }
                     pendingActionText = data.actionText;
-                    speakNarrative("You selected " + data.actionText + ". Roll your d20.");
+                    speakNarrative("You selected " + data.actionText + ". Roll your d " + requiredDieSides);
                 } else {
-                    turnNotice.innerText = data.targetHero + ' is rolling the d20...';
-                    d20Btn.disabled = true;
-                    d20Btn.classList.remove('ready-to-roll');
+                    turnNotice.innerText = data.targetHero + ' is rolling the d' + (data.dieType || 20) + '...';
                 }
             }
         }
 
-        // --- 6. PLAYER ACTIONS & ROLLS ---
-        function selectAction(choice) {
+        function disableAllDice() {
+            var dice = document.querySelectorAll('.dice-btn');
+            dice.forEach(function(d) { d.classList.remove('ready-to-roll'); });
+        }
+
+        // --- 6. ACTIONS & MULTI-DICE ROLLS ---
+        function selectAction(choiceText, dieType) {
             document.getElementById('dynamic-choices').innerHTML = '';
             document.getElementById('turn-notice').innerText = 'Broadcasting choice...';
-            
             broadcastToAll({
                 type: 'PLAYER_ACTION_CHOSEN',
                 heroName: myHero.name,
-                actionText: choice
+                actionText: choiceText,
+                dieType: dieType || 20
             });
         }
 
-        function handleD20Roll() {
-            var d20Btn = document.getElementById('d20-btn');
-            d20Btn.disabled = true;
-            d20Btn.classList.remove('ready-to-roll');
+        function handleRoll(sides) {
+            var activeDie = document.getElementById('die-d' + sides);
+            if (!activeDie || !activeDie.classList.contains('ready-to-roll')) return;
 
-            var naturalRoll = Math.floor(Math.random() * 20) + 1;
+            disableAllDice();
+            var naturalRoll = Math.floor(Math.random() * sides) + 1;
             var totalWithMod = naturalRoll + myHero.mod;
 
-            document.getElementById('turn-notice').innerText = 'Rolled ' + naturalRoll + ' + ' + myHero.mod + ' Mod = ' + totalWithMod + '! Resolving...';
-
-            speakNarrative("You rolled a " + naturalRoll + "!");
+            document.getElementById('turn-notice').innerText = 'Rolled ' + naturalRoll + ' on d' + sides + ' (+ ' + myHero.mod + ' Mod = ' + totalWithMod + ')! Resolving...';
+            speakNarrative("You rolled a " + naturalRoll + " on a d " + sides + "!");
 
             broadcastToAll({
                 type: 'PLAYER_ROLLED',
                 heroName: myHero.name,
                 actionText: pendingActionText,
                 roll: naturalRoll,
-                total: totalWithMod
+                total: totalWithMod,
+                dieType: sides
             });
         }
 
@@ -953,7 +1121,7 @@
             document.getElementById('dynamic-choices').innerHTML = '';
             gameHistory.push({
                 role: "user",
-                parts: [{ text: "The heroes have regrouped and resumed their quest. Summarize the immediate situation, strictly respecting each character's pronouns, and call on a hero to act." }]
+                parts: [{ text: "The heroes have regrouped. Summarize current events respecting each hero's pronouns, assign an action, and state which polyhedral die is needed (d4, d6, d8, d10, d12, d20, d100)." }]
             });
             fetchAndBroadcastGemini();
         }
@@ -971,26 +1139,41 @@
                 {
                     role: "user",
                     parts: [{
-                        text: 'You are the DM running a ' + activeGenre + ' campaign for this hero party: ' + partyRoster + '.\n' +
-'CRITICAL RULE: Always use the exact pronouns indicated in each hero\'s roster entry (e.g. if Drew is listed as female she/her, NEVER refer to Drew as he/him).\n' +
+                        text: 'You are the DM running a ' + activeGenre + ' campaign for: ' + partyRoster + '.\n' +
+'CRITICAL RULES:\n' +
+'1. Respect stated pronouns strictly.\n' +
+'2. Multi-dice selection: Each option in "choices" must specify which die type fits the task from [4, 6, 8, 10, 12, 20, 100]. (e.g. d20 for skill checks, d6/d8 for attack/stealth, d4 for lockpick, d100 for luck/loot search).\n' +
+'3. Award Gil: When the party discovers treasure, loots fallen enemies, or completes a task, specify "gilAward" (integer amount, or 0) and "gilTarget" ("ALL" or specific hero name).\n' +
 'Respond ONLY with valid JSON structured exactly as:\n' +
 '{\n' +
 '  "narrative": "scene description",\n' +
-'  "targetHero": "specific hero name whose turn it is to act, or ALL",\n' +
-'  "choices": ["Option 1", "Option 2", "Option 3"],\n' +
+'  "targetHero": "specific hero name, or ALL",\n' +
+'  "choices": [\n' +
+'    {"text": "Action option 1", "dieType": 20},\n' +
+'    {"text": "Action option 2", "dieType": 8}\n' +
+'  ],\n' +
 '  "completedTask": false,\n' +
-'  "levelUpHero": "NONE"\n' +
-'}\n' +
-'When an action completes a challenge or task, set "completedTask": true and set "levelUpHero" to that hero\'s name (or ALL).'
+'  "levelUpHero": "NONE",\n' +
+'  "gilAward": 25,\n' +
+'  "gilTarget": "ALL"\n' +
+'}'
                     }]
                 },
                 {
                     role: "model",
-                    parts: [{ text: JSON.stringify({ narrative: "Ready.", targetHero: "ALL", choices: ["Begin"], completedTask: false, levelUpHero: "NONE" }) }]
+                    parts: [{ text: JSON.stringify({ 
+                        narrative: "Ready.", 
+                        targetHero: "ALL", 
+                        choices: [{"text": "Begin", "dieType": 20}], 
+                        completedTask: false, 
+                        levelUpHero: "NONE",
+                        gilAward: 0,
+                        gilTarget: "NONE"
+                    }) }]
                 },
                 {
                     role: "user",
-                    parts: [{ text: "Begin the quest. Introduce the opening dilemma and call on a specific hero to take the first action, adhering strictly to their stated pronouns." }]
+                    parts: [{ text: "Begin the quest. Introduce the opening dilemma and call on a specific hero with appropriate polyhedral die options." }]
                 }
             ];
 
@@ -998,23 +1181,21 @@
             fetchAndBroadcastGemini();
         }
 
-        async function triggerGeminiResolution(heroName, action, naturalRoll, total) {
+        async function triggerGeminiResolution(heroName, action, naturalRoll, total, sides) {
             var activeHero = party.find(function(p) { return p.name.toLowerCase() === heroName.toLowerCase(); });
             var pronounNote = activeHero && activeHero.gender ? ' [Pronouns: ' + activeHero.gender + ']' : '';
 
             gameHistory.push({
                 role: "user",
                 parts: [{
-                    text: '[Turn Check] ' + heroName + pronounNote + ' attempted: "' + action + '".\n' +
-'Natural d20 Roll: ' + naturalRoll + ', Total with Modifier: ' + total + '.\n' +
-'Describe the outcome respecting ' + heroName + '\'s pronouns. If this roll completes a key task or defeats a foe, set completedTask: true and levelUpHero: "' + heroName + '". Designate who acts next.'
+                    text: '[Turn Check] ' + heroName + pronounNote + ' rolled a ' + naturalRoll + ' on a d' + sides + ' (Total: ' + total + ') for: "' + action + '".\n' +
+'Describe the outcome respecting ' + heroName + '\'s pronouns. If they find loot, defeat an enemy, or open a chest, include a "gilAward" (> 0). Designate the next hero to act and offer actions with appropriate dieTypes (4, 6, 8, 10, 12, 20, or 100).'
                 }]
             });
             fetchAndBroadcastGemini();
         }
 
         async function fetchAndBroadcastGemini() {
-            var d20Btn = document.getElementById('d20-btn');
             try {
                 log('Querying Gemini DM...');
                 var response = await fetch(API_URL, {
@@ -1032,13 +1213,7 @@
                 });
 
                 var data = await response.json();
-                if (data.error) {
-                    throw new Error(data.error.message || "Gemini API rejected request");
-                }
-
-                if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
-                    throw new Error("Empty candidate payload from Gemini.");
-                }
+                if (data.error) throw new Error(data.error.message || "Gemini rejected request");
 
                 var parts = data.candidates[0].content.parts;
                 var textPart = parts.find(function(p) { return p.text && !p.thought; }) || parts[parts.length - 1];
@@ -1049,6 +1224,16 @@
 
                 gameHistory.push({ role: "model", parts: [{ text: rawText }] });
 
+                // Gil Loot Handling
+                if (parsed.gilAward && parsed.gilAward > 0) {
+                    broadcastToAll({
+                        type: 'AWARD_GIL',
+                        amount: parsed.gilAward,
+                        targetHero: parsed.gilTarget || 'ALL'
+                    });
+                }
+
+                // Level Up Handling
                 if (parsed.completedTask && parsed.levelUpHero && parsed.levelUpHero !== 'NONE') {
                     broadcastToAll({
                         type: 'LEVEL_UP',
@@ -1056,11 +1241,17 @@
                     });
                 }
 
+                // Format choices for array safety
+                var formattedChoices = (parsed.choices || []).map(function(c) {
+                    if (typeof c === 'string') return { text: c, dieType: 20 };
+                    return c;
+                });
+
                 broadcastToAll({
                     type: 'SCENE_UPDATE',
                     narrative: parsed.narrative,
                     targetHero: parsed.targetHero || 'ALL',
-                    choices: parsed.choices || []
+                    choices: formattedChoices
                 });
 
                 log('DM query complete.');
@@ -1073,10 +1264,7 @@
                     text: '⚠️ DM communication error: ' + err.message
                 });
 
-                if (d20Btn) {
-                    d20Btn.disabled = true;
-                    d20Btn.classList.remove('ready-to-roll');
-                }
+                disableAllDice();
                 var choicesBox = document.getElementById('dynamic-choices');
                 if (choicesBox && isHost) {
                     choicesBox.innerHTML = '<button class="btn btn-green" onclick="fetchAndBroadcastGemini()">🔄 Retry DM Action</button>';
