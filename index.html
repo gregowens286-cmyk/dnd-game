@@ -881,51 +881,88 @@
             });
         }
 
-        // --- WEBRTC MOBILE-OPTIMIZED AUDIO ENGINE ---
+        // --- WEBRTC FIXED ZERO-LOGIN AUDIO MESH ---
         async function toggleMicrophone() {
             var btn = document.getElementById('mic-toggle-btn');
+
             if (!isMicActive) {
                 try {
-                    localMediaStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                    if (!localMediaStream) {
+                        localMediaStream = await navigator.mediaDevices.getUserMedia({ 
+                            audio: {
+                                echoCancellation: true,
+                                noiseSuppression: true,
+                                autoGainControl: true
+                            }, 
+                            video: false 
+                        });
+
+                        Object.keys(peerAudioConnections).forEach(function(targetId) {
+                            var pc = peerAudioConnections[targetId];
+                            localMediaStream.getAudioTracks().forEach(function(track) {
+                                pc.addTrack(track, localMediaStream);
+                            });
+                            renegotiateAudioOffer(targetId);
+                        });
+                    } else {
+                        localMediaStream.getAudioTracks().forEach(function(track) {
+                            track.enabled = true;
+                        });
+                    }
+
                     isMicActive = true;
                     btn.innerText = "🎙️ Mic: LIVE";
-                    btn.style.backgroundColor = "var(--success-green)";
-                    Object.keys(peerAudioConnections).forEach(function(targetId) {
-                        var pc = peerAudioConnections[targetId];
-                        localMediaStream.getAudioTracks().forEach(function(track) { pc.addTrack(track, localMediaStream); });
-                        renegotiateAudioOffer(targetId);
-                    });
+                    btn.className = "btn btn-green";
+                    log("Microphone live.");
+
+                    document.querySelectorAll('audio').forEach(function(a) { a.play().catch(function(){}); });
+
                 } catch (err) {
-                    alert("Mic error: " + err.message);
+                    alert("Microphone access error: " + err.message);
+                    log("Mic Error: " + err.message);
                 }
             } else {
                 if (localMediaStream) {
-                    localMediaStream.getTracks().forEach(function(track) { track.stop(); });
-                    localMediaStream = null;
+                    localMediaStream.getAudioTracks().forEach(function(track) {
+                        track.enabled = false;
+                    });
                 }
                 isMicActive = false;
                 btn.innerText = "🎙️ Mic: OFF";
+                btn.className = "btn";
                 btn.style.backgroundColor = "#555";
+                log("Microphone muted.");
             }
         }
 
         function setupAudioPeer(targetId, isInitiator) {
             if (peerAudioConnections[targetId]) return peerAudioConnections[targetId];
+
             var pc = new RTCPeerConnection(rtcConfiguration);
             peerAudioConnections[targetId] = pc;
+
             pc.addTransceiver('audio', { direction: 'sendrecv' });
 
             if (localMediaStream) {
-                localMediaStream.getAudioTracks().forEach(function(track) { pc.addTrack(track, localMediaStream); });
+                localMediaStream.getAudioTracks().forEach(function(track) {
+                    pc.addTrack(track, localMediaStream);
+                });
             }
 
             pc.onicecandidate = function(event) {
                 if (event.candidate) {
-                    broadcastToAll({ type: 'VOICE_SIGNAL', senderId: myClientId, targetId: targetId, signalType: 'candidate', candidate: event.candidate });
+                    broadcastToAll({
+                        type: 'VOICE_SIGNAL',
+                        senderId: myClientId,
+                        targetId: targetId,
+                        signalType: 'candidate',
+                        candidate: event.candidate
+                    });
                 }
             };
 
             pc.ontrack = function(event) {
+                log("Received remote audio track from " + targetId);
                 var remoteAudio = document.getElementById('audio_player_' + targetId);
                 if (!remoteAudio) {
                     remoteAudio = document.createElement('audio');
@@ -935,9 +972,11 @@
                     document.body.appendChild(remoteAudio);
                 }
                 remoteAudio.srcObject = event.streams[0];
-                var p = remoteAudio.play();
-                if (p !== undefined) {
-                    p.catch(function() {
+                
+                var playPromise = remoteAudio.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(function(error) {
+                        console.warn("Mobile autoplay restriction hit:", error);
                         window.addEventListener('click', function unlockAudio() {
                             remoteAudio.play();
                             window.removeEventListener('click', unlockAudio);
@@ -946,7 +985,10 @@
                 }
             };
 
-            if (isInitiator) renegotiateAudioOffer(targetId);
+            if (isInitiator) {
+                renegotiateAudioOffer(targetId);
+            }
+
             return pc;
         }
 
@@ -954,26 +996,53 @@
             var pc = peerAudioConnections[targetId];
             if (!pc) return;
             try {
-                var offer = await pc.createOffer();
+                var offer = await pc.createOffer({
+                    offerToReceiveAudio: true
+                });
                 await pc.setLocalDescription(offer);
-                broadcastToAll({ type: 'VOICE_SIGNAL', senderId: myClientId, targetId: targetId, signalType: 'offer', sdp: pc.localDescription });
-            } catch (e) {}
+                broadcastToAll({
+                    type: 'VOICE_SIGNAL',
+                    senderId: myClientId,
+                    targetId: targetId,
+                    signalType: 'offer',
+                    sdp: pc.localDescription
+                });
+            } catch (e) {
+                console.error("Audio offer error", e);
+            }
         }
 
         async function handleVoiceSignaling(data) {
             if (data.targetId !== myClientId) return;
+
             var pc = peerAudioConnections[data.senderId] || setupAudioPeer(data.senderId, false);
-            if (data.signalType === 'offer') {
-                await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
-                var answer = await pc.createAnswer();
-                await pc.setLocalDescription(answer);
-                broadcastToAll({ type: 'VOICE_SIGNAL', senderId: myClientId, targetId: data.senderId, signalType: 'answer', sdp: pc.localDescription });
-            } else if (data.signalType === 'answer') {
-                await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
-            } else if (data.signalType === 'candidate') {
-                try { await pc.addIceCandidate(new RTCIceCandidate(data.candidate)); } catch (e) {}
+
+            try {
+                if (data.signalType === 'offer') {
+                    await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+                    var answer = await pc.createAnswer();
+                    await pc.setLocalDescription(answer);
+                    broadcastToAll({
+                        type: 'VOICE_SIGNAL',
+                        senderId: myClientId,
+                        targetId: data.senderId,
+                        signalType: 'answer',
+                        sdp: pc.localDescription
+                    });
+                } else if (data.signalType === 'answer') {
+                    if (pc.signalingState !== "stable") {
+                        await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+                    }
+                } else if (data.signalType === 'candidate') {
+                    if (data.candidate) {
+                        await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+                    }
+                }
+            } catch (err) {
+                console.warn("Voice signaling error:", err);
             }
         }
+
 
         // --- HAVEN / RESTING MECHANIC ---
         function triggerHavenRest() {
