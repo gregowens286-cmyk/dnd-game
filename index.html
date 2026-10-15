@@ -65,12 +65,15 @@
             font-size: 1rem;
         }
 
-        /* Avatar Styling */
+        /* Avatar Customization Styling */
         .avatar-creator {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 8px;
+            background: #222;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #444;
             margin-bottom: 12px;
         }
 
@@ -81,6 +84,19 @@
             border: 3px solid var(--active-gold);
             background: #1a1a1a;
             box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            margin-bottom: 10px;
+        }
+
+        .customizer-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .customizer-grid select {
+            padding: 6px 8px;
+            font-size: 0.85rem;
         }
 
         .avatar-hud {
@@ -105,25 +121,51 @@
             padding: 14px;
             overflow-y: auto;
             border: 1px solid #444;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             font-size: 1.05rem;
             line-height: 1.45;
         }
 
-        .stat-banner {
+        /* Core Stat Banners */
+        .primary-stat-banner {
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 6px;
             background: #222;
             border: 1px solid #444;
             border-radius: 6px;
             padding: 8px;
             text-align: center;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
         .stat-box { font-size: 0.75rem; }
         .stat-val { font-size: 1.1rem; font-weight: bold; color: var(--active-gold); }
+
+        .abilities-bar {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 4px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 4px;
+            text-align: center;
+            margin-bottom: 8px;
+            font-size: 0.7rem;
+        }
+
+        .ability-box {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .ability-val {
+            font-weight: bold;
+            color: #2ecc71;
+            font-size: 0.85rem;
+        }
 
         .utility-bar {
             display: flex;
@@ -167,7 +209,7 @@
             justify-content: center;
             align-items: center;
             gap: 8px;
-            margin: 10px 0;
+            margin: 8px 0;
             flex-wrap: wrap;
         }
 
@@ -175,11 +217,11 @@
             background: radial-gradient(circle, #333 0%, #1a1a1a 100%);
             color: #888;
             border: 2px solid #555;
-            min-width: 52px;
-            height: 52px;
+            min-width: 50px;
+            height: 50px;
             border-radius: 8px;
             font-weight: bold;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             cursor: not-allowed;
             display: flex;
             align-items: center;
@@ -304,10 +346,48 @@
                 <div id="save-info" style="font-size: 0.8rem; color: #aaa; margin-top: 4px;"></div>
             </div>
 
-            <!-- Host Avatar Customizer -->
+            <!-- Host Avatar Builder -->
             <div class="avatar-creator">
-                <img id="host-avatar-img" class="avatar-preview" src="https://api.dicebear.com/9.x/adventurer/svg?seed=PartyLeader">
-                <button type="button" class="btn btn-purple" style="padding: 6px 14px; margin: 0; font-size: 0.85rem;" onclick="randomizeAvatar('host')">🎨 Shuffle Avatar</button>
+                <img id="host-avatar-img" class="avatar-preview" src="">
+                <div class="customizer-grid">
+                    <div>
+                        <label style="font-size:0.75rem; color:#aaa;">Skin Tone</label>
+                        <select id="host-avatar-skin" onchange="updateCustomAvatar('host')">
+                            <option value="f2d3b1">Fair</option>
+                            <option value="d08b5b" selected>Warm / Tan</option>
+                            <option value="ae5d29">Deep Caramel</option>
+                            <option value="614335">Dark Espresso</option>
+                            <option value="92d050">Orcish Olive</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size:0.75rem; color:#aaa;">Hair Style</label>
+                        <select id="host-avatar-hair" onchange="updateCustomAvatar('host')">
+                            <option value="short01">Short Crop</option>
+                            <option value="short04" selected>Modern Fade</option>
+                            <option value="long01">Long Flowing</option>
+                            <option value="long03">Braided Locks</option>
+                            <option value="curly01">Curly Afro</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size:0.75rem; color:#aaa;">Hair Color</label>
+                        <select id="host-avatar-haircolor" onchange="updateCustomAvatar('host')">
+                            <option value="2c1b18" selected>Black / Deep Brown</option>
+                            <option value="85461e">Auburn / Chestnut</option>
+                            <option value="e5d7a3">Golden Blonde</option>
+                            <option value="b91c1c">Crimson Red</option>
+                            <option value="6b21a8">Mystic Purple</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size:0.75rem; color:#aaa;">Accessory</label>
+                        <select id="host-avatar-glasses" onchange="updateCustomAvatar('host')">
+                            <option value="0" selected>None</option>
+                            <option value="100">Explorer Specs</option>
+                        </select>
+                    </div>
+                </div>
             </div>
 
             <div class="input-group">
@@ -334,10 +414,10 @@
             <div class="input-group">
                 <label>Your Role</label>
                 <select id="host-hero-role">
-                    <option value="Warrior">Warrior / Vanguard</option>
-                    <option value="Mage">Mage / Specialist</option>
-                    <option value="Rogue">Rogue / Infiltrator</option>
-                    <option value="Cleric">Cleric / Support</option>
+                    <option value="Warrior">Warrior / Vanguard (High HP, Heavy AC)</option>
+                    <option value="Mage">Mage / Specialist (High INT/Magic)</option>
+                    <option value="Rogue">Rogue / Infiltrator (High DEX/Stealth)</option>
+                    <option value="Cleric">Cleric / Support (Balanced Defense, High WIS)</option>
                 </select>
             </div>
             <button class="btn btn-green" onclick="setupHost()">Host New Game</button>
@@ -347,10 +427,48 @@
             <h3>Join Existing Adventure</h3>
             <p style="font-size: 0.85rem; color:#aaa;">Connect your phone or tablet to play your hero.</p>
 
-            <!-- Player Avatar Customizer -->
+            <!-- Player Avatar Builder -->
             <div class="avatar-creator">
-                <img id="player-avatar-img" class="avatar-preview" src="https://api.dicebear.com/9.x/adventurer/svg?seed=Adventurer">
-                <button type="button" class="btn btn-purple" style="padding: 6px 14px; margin: 0; font-size: 0.85rem;" onclick="randomizeAvatar('player')">🎨 Shuffle Avatar</button>
+                <img id="player-avatar-img" class="avatar-preview" src="">
+                <div class="customizer-grid">
+                    <div>
+                        <label style="font-size:0.75rem; color:#aaa;">Skin Tone</label>
+                        <select id="player-avatar-skin" onchange="updateCustomAvatar('player')">
+                            <option value="f2d3b1" selected>Fair</option>
+                            <option value="d08b5b">Warm / Tan</option>
+                            <option value="ae5d29">Deep Caramel</option>
+                            <option value="614335">Dark Espresso</option>
+                            <option value="92d050">Orcish Olive</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size:0.75rem; color:#aaa;">Hair Style</label>
+                        <select id="player-avatar-hair" onchange="updateCustomAvatar('player')">
+                            <option value="short01">Short Crop</option>
+                            <option value="short04">Modern Fade</option>
+                            <option value="long01" selected>Long Flowing</option>
+                            <option value="long03">Braided Locks</option>
+                            <option value="curly01">Curly Afro</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size:0.75rem; color:#aaa;">Hair Color</label>
+                        <select id="player-avatar-haircolor" onchange="updateCustomAvatar('player')">
+                            <option value="2c1b18">Black / Deep Brown</option>
+                            <option value="85461e">Auburn / Chestnut</option>
+                            <option value="e5d7a3" selected>Golden Blonde</option>
+                            <option value="b91c1c">Crimson Red</option>
+                            <option value="6b21a8">Mystic Purple</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size:0.75rem; color:#aaa;">Accessory</label>
+                        <select id="player-avatar-glasses" onchange="updateCustomAvatar('player')">
+                            <option value="0" selected>None</option>
+                            <option value="100">Explorer Specs</option>
+                        </select>
+                    </div>
+                </div>
             </div>
 
             <div class="input-group">
@@ -372,10 +490,10 @@
             <div class="input-group">
                 <label>Role</label>
                 <select id="player-hero-role">
-                    <option value="Warrior">Warrior / Vanguard</option>
-                    <option value="Mage">Mage / Specialist</option>
-                    <option value="Rogue">Rogue / Infiltrator</option>
-                    <option value="Cleric">Cleric / Support</option>
+                    <option value="Warrior">Warrior / Vanguard (High HP, Heavy AC)</option>
+                    <option value="Mage">Mage / Specialist (High INT/Magic)</option>
+                    <option value="Rogue">Rogue / Infiltrator (High DEX/Stealth)</option>
+                    <option value="Cleric">Cleric / Support (Balanced Defense, High WIS)</option>
                 </select>
             </div>
             <button class="btn" onclick="joinAsPlayer()">Join Realm</button>
@@ -397,12 +515,22 @@
             <button id="save-btn" class="btn btn-blue" style="padding:6px 10px; margin:0; font-size:0.8rem; display:none;" onclick="manualSaveGame()">💾 Save</button>
         </div>
 
-        <div class="stat-banner" id="stats-banner">
-            <div class="stat-box"><span class="stat-val" id="stat-hp">20/20</span><br>HP</div>
-            <div class="stat-box"><span class="stat-val" id="stat-ac">13</span><br>Armor</div>
+        <!-- Primary Stat Banner -->
+        <div class="primary-stat-banner" id="stats-banner">
+            <div class="stat-box"><span class="stat-val" id="stat-hp">--/--</span><br>HP</div>
+            <div class="stat-box"><span class="stat-val" id="stat-ac">--</span><br>Armor (AC)</div>
             <div class="stat-box"><span class="stat-val" id="stat-lvl">1</span><br>Level</div>
-            <div class="stat-box"><span class="stat-val" id="stat-mod">+2</span><br>Mod</div>
             <div class="stat-box"><span class="stat-val" id="stat-gil">50</span><br>Gil</div>
+        </div>
+
+        <!-- Core 6 Ability Scores Bar -->
+        <div class="abilities-bar" id="abilities-banner">
+            <div class="ability-box"><span>STR</span><span class="ability-val" id="stat-str">+0</span></div>
+            <div class="ability-box"><span>DEX</span><span class="ability-val" id="stat-dex">+0</span></div>
+            <div class="ability-box"><span>CON</span><span class="ability-val" id="stat-con">+0</span></div>
+            <div class="ability-box"><span>INT</span><span class="ability-val" id="stat-int">+0</span></div>
+            <div class="ability-box"><span>WIS</span><span class="ability-val" id="stat-wis">+0</span></div>
+            <div class="ability-box"><span>CHA</span><span class="ability-val" id="stat-cha">+0</span></div>
         </div>
 
         <div id="narrative-box">
@@ -453,20 +581,20 @@
         var party = [];
         var myHero = null;
         var pendingActionText = "";
+        var pendingStatRequired = "STR";
         var requiredDieSides = 20;
         var gameHistory = [];
         var activeGenre = "Medieval Fantasy";
 
-        // Avatar Seeds
-        var hostAvatarSeed = "PartyLeader_" + Math.random().toString(36).substring(2, 7);
-        var playerAvatarSeed = "Adventurer_" + Math.random().toString(36).substring(2, 7);
-
-        // Store Inventory (Cost & Stat Buffs)
+        // Store Inventory (Cost & Stat Buffs across AC, HP, and Ability Scores)
         var STORE_ITEMS = [
-            { id: "potion_hp", name: "Health Elixir", cost: 25, hpBuff: 10, acBuff: 0, modBuff: 0, desc: "+10 Max & Current HP" },
-            { id: "iron_shield", name: "Reinforced Shield", cost: 50, hpBuff: 0, acBuff: 2, modBuff: 0, desc: "+2 Armor Class" },
-            { id: "mithril_ring", name: "Amulet of Focus", cost: 75, hpBuff: 0, acBuff: 0, modBuff: 1, desc: "+1 to All Roll Modifiers" },
-            { id: "dragon_plate", name: "Titan's Plate", cost: 120, hpBuff: 15, acBuff: 3, modBuff: 1, desc: "+15 HP, +3 Armor, +1 Mod" }
+            { id: "potion_hp", name: "Health Elixir", cost: 25, hpBuff: 10, acBuff: 0, statBuffKey: null, statBuffVal: 0, desc: "+10 Max & Current HP" },
+            { id: "iron_shield", name: "Reinforced Shield", cost: 50, hpBuff: 0, acBuff: 2, statBuffKey: null, statBuffVal: 0, desc: "+2 Armor Class (AC)" },
+            { id: "gauntlets_ogre", name: "Brawler Gauntlets", cost: 70, hpBuff: 0, acBuff: 0, statBuffKey: "STR", statBuffVal: 1, desc: "+1 to Strength (STR) Checks" },
+            { id: "boots_elvenkind", name: "Silent Treads", cost: 70, hpBuff: 0, acBuff: 0, statBuffKey: "DEX", statBuffVal: 1, desc: "+1 to Dexterity (DEX) Checks" },
+            { id: "tome_clarity", name: "Arcane Grimoire", cost: 75, hpBuff: 0, acBuff: 0, statBuffKey: "INT", statBuffVal: 1, desc: "+1 to Intelligence (INT) Checks" },
+            { id: "amulet_wisdom", name: "Radiant Talisman", cost: 75, hpBuff: 0, acBuff: 0, statBuffKey: "WIS", statBuffVal: 1, desc: "+1 to Wisdom (WIS) Checks" },
+            { id: "dragon_mantle", name: "Titan's Plate", cost: 130, hpBuff: 15, acBuff: 3, statBuffKey: "CON", statBuffVal: 1, desc: "+15 HP, +3 Armor, +1 CON" }
         ];
 
         var synth = window.speechSynthesis;
@@ -486,8 +614,8 @@
 
         window.addEventListener('DOMContentLoaded', function() {
             if (synth) synth.getVoices();
-            document.getElementById('host-avatar-img').src = getAvatarUrl(hostAvatarSeed);
-            document.getElementById('player-avatar-img').src = getAvatarUrl(playerAvatarSeed);
+            updateCustomAvatar('host');
+            updateCustomAvatar('player');
             checkExistingSave();
         });
 
@@ -516,20 +644,56 @@
             }
         }
 
-        // --- AVATAR ENGINE ---
-        function getAvatarUrl(seed) {
-            return 'https://api.dicebear.com/9.x/adventurer/svg?seed=' + encodeURIComponent(seed);
+        // --- ROLE ABILITY MAPPING ---
+        function getClassArchetypeStats(role) {
+            switch (role) {
+                case "Warrior":
+                    return {
+                        hp: 26, maxHp: 26, ac: 16,
+                        stats: { STR: 3, DEX: 1, CON: 2, INT: 0, WIS: 1, CHA: 1 }
+                    };
+                case "Rogue":
+                    return {
+                        hp: 18, maxHp: 18, ac: 14,
+                        stats: { STR: 1, DEX: 4, CON: 1, INT: 2, WIS: 1, CHA: 2 }
+                    };
+                case "Mage":
+                    return {
+                        hp: 16, maxHp: 16, ac: 11,
+                        stats: { STR: 0, DEX: 2, CON: 1, INT: 4, WIS: 2, CHA: 1 }
+                    };
+                case "Cleric":
+                    return {
+                        hp: 22, maxHp: 22, ac: 15,
+                        stats: { STR: 2, DEX: 0, CON: 2, INT: 1, WIS: 3, CHA: 1 }
+                    };
+                default:
+                    return {
+                        hp: 20, maxHp: 20, ac: 13,
+                        stats: { STR: 2, DEX: 2, CON: 2, INT: 2, WIS: 2, CHA: 2 }
+                    };
+            }
         }
 
-        function randomizeAvatar(target) {
-            var newSeed = (target === 'host' ? 'Leader_' : 'Hero_') + Math.random().toString(36).substring(2, 8);
-            if (target === 'host') {
-                hostAvatarSeed = newSeed;
-                document.getElementById('host-avatar-img').src = getAvatarUrl(hostAvatarSeed);
-            } else {
-                playerAvatarSeed = newSeed;
-                document.getElementById('player-avatar-img').src = getAvatarUrl(playerAvatarSeed);
-            }
+        // --- AVATAR BUILDER ENGINE ---
+        function buildAvatarUrl(skin, hair, hairColor, glasses) {
+            return 'https://api.dicebear.com/9.x/adventurer/svg?' +
+                'skinColor=' + skin +
+                '&hair=' + hair +
+                '&hairColor=' + hairColor +
+                '&glassesProbability=' + glasses +
+                '&featuresProbability=0';
+        }
+
+        function updateCustomAvatar(target) {
+            var skin = document.getElementById(target + '-avatar-skin').value;
+            var hair = document.getElementById(target + '-avatar-hair').value;
+            var hairColor = document.getElementById(target + '-avatar-haircolor').value;
+            var glasses = document.getElementById(target + '-avatar-glasses').value;
+
+            var url = buildAvatarUrl(skin, hair, hairColor, glasses);
+            document.getElementById(target + '-avatar-img').src = url;
+            return url;
         }
 
         // --- NARRATION ---
@@ -638,7 +802,7 @@
             });
         }
 
-        // Voice Signatures
+        // --- WEBRTC MOBILE-OPTIMIZED AUDIO ENGINE ---
         async function toggleMicrophone() {
             var btn = document.getElementById('mic-toggle-btn');
             if (!isMicActive) {
@@ -670,24 +834,41 @@
             if (peerAudioConnections[targetId]) return peerAudioConnections[targetId];
             var pc = new RTCPeerConnection(rtcConfiguration);
             peerAudioConnections[targetId] = pc;
+
+            // Ensure bi-directional audio receiving capabilities exist prior to local mic streaming
+            pc.addTransceiver('audio', { direction: 'sendrecv' });
+
             if (localMediaStream) {
                 localMediaStream.getAudioTracks().forEach(function(track) { pc.addTrack(track, localMediaStream); });
             }
+
             pc.onicecandidate = function(event) {
                 if (event.candidate) {
                     broadcastToAll({ type: 'VOICE_SIGNAL', senderId: myClientId, targetId: targetId, signalType: 'candidate', candidate: event.candidate });
                 }
             };
+
             pc.ontrack = function(event) {
                 var remoteAudio = document.getElementById('audio_player_' + targetId);
                 if (!remoteAudio) {
                     remoteAudio = document.createElement('audio');
                     remoteAudio.id = 'audio_player_' + targetId;
                     remoteAudio.autoplay = true;
+                    remoteAudio.playsInline = true;
                     document.body.appendChild(remoteAudio);
                 }
                 remoteAudio.srcObject = event.streams[0];
+                var p = remoteAudio.play();
+                if (p !== undefined) {
+                    p.catch(function() {
+                        window.addEventListener('click', function unlockAudio() {
+                            remoteAudio.play();
+                            window.removeEventListener('click', unlockAudio);
+                        }, { once: true });
+                    });
+                }
             };
+
             if (isInitiator) renegotiateAudioOffer(targetId);
             return pc;
         }
@@ -773,11 +954,13 @@
             if (!myHero.inventory) myHero.inventory = [];
             myHero.inventory.push(item.id);
 
-            // Apply Buffs
+            // Apply Buffs to Base HP, AC, and Core Stats
             myHero.maxHp += item.hpBuff;
             myHero.hp += item.hpBuff;
             myHero.ac += item.acBuff;
-            myHero.mod += item.modBuff;
+            if (item.statBuffKey && myHero.stats[item.statBuffKey] !== undefined) {
+                myHero.stats[item.statBuffKey] += item.statBuffVal;
+            }
 
             renderHeroHUD();
             openShopModal();
@@ -800,18 +983,21 @@
                 var hostName = document.getElementById('host-hero-name').value.trim() || "Party Leader";
                 var hostGender = document.getElementById('host-hero-gender').value;
                 var hostRole = document.getElementById('host-hero-role').value;
+                var hostAvatar = updateCustomAvatar('host');
+
+                var archetypes = getClassArchetypeStats(hostRole);
 
                 myHero = {
                     id: myClientId,
                     name: hostName,
                     gender: hostGender,
                     role: hostRole,
-                    avatar: getAvatarUrl(hostAvatarSeed),
+                    avatar: hostAvatar,
                     level: 1,
-                    hp: 20,
-                    maxHp: 20,
-                    ac: hostRole === "Warrior" ? 16 : 13,
-                    mod: 2,
+                    hp: archetypes.hp,
+                    maxHp: archetypes.maxHp,
+                    ac: archetypes.ac,
+                    stats: archetypes.stats,
                     gil: 50,
                     inventory: [],
                     xp: 0
@@ -841,7 +1027,8 @@
             myHero.id = myClientId;
             if (!myHero.gil) myHero.gil = 50;
             if (!myHero.inventory) myHero.inventory = [];
-            if (!myHero.avatar) myHero.avatar = getAvatarUrl(myHero.name);
+            if (!myHero.avatar) myHero.avatar = updateCustomAvatar('host');
+            if (!myHero.stats) myHero.stats = getClassArchetypeStats(myHero.role).stats;
 
             startHostSession(true, parsed.narrative);
         }
@@ -884,6 +1071,7 @@
                 var nameInput = document.getElementById('player-hero-name').value.trim() || "Adventurer";
                 var genderInput = document.getElementById('player-hero-gender').value;
                 var roleInput = document.getElementById('player-hero-role').value;
+                var playerAvatar = updateCustomAvatar('player');
 
                 if (codeInput.length !== 4) {
                     alert("Please enter a valid 4-letter room code.");
@@ -893,17 +1081,19 @@
                 currentRoomCode = codeInput;
                 currentTopic = 'dnd-game-room/' + currentRoomCode;
 
+                var archetypes = getClassArchetypeStats(roleInput);
+
                 myHero = {
                     id: myClientId,
                     name: nameInput,
                     gender: genderInput,
                     role: roleInput,
-                    avatar: getAvatarUrl(playerAvatarSeed),
+                    avatar: playerAvatar,
                     level: 1,
-                    hp: 20,
-                    maxHp: 20,
-                    ac: roleInput === "Warrior" ? 16 : 13,
-                    mod: 2,
+                    hp: archetypes.hp,
+                    maxHp: archetypes.maxHp,
+                    ac: archetypes.ac,
+                    stats: archetypes.stats,
                     gil: 50,
                     inventory: [],
                     xp: 0
@@ -931,14 +1121,22 @@
             document.getElementById('stat-hp').innerText = myHero.hp + '/' + myHero.maxHp;
             document.getElementById('stat-ac').innerText = myHero.ac;
             document.getElementById('stat-lvl').innerText = myHero.level;
-            document.getElementById('stat-mod').innerText = '+' + myHero.mod;
             document.getElementById('stat-gil').innerText = myHero.gil || 0;
+
+            if (myHero.stats) {
+                document.getElementById('stat-str').innerText = (myHero.stats.STR >= 0 ? '+' : '') + myHero.stats.STR;
+                document.getElementById('stat-dex').innerText = (myHero.stats.DEX >= 0 ? '+' : '') + myHero.stats.DEX;
+                document.getElementById('stat-con').innerText = (myHero.stats.CON >= 0 ? '+' : '') + myHero.stats.CON;
+                document.getElementById('stat-int').innerText = (myHero.stats.INT >= 0 ? '+' : '') + myHero.stats.INT;
+                document.getElementById('stat-wis').innerText = (myHero.stats.WIS >= 0 ? '+' : '') + myHero.stats.WIS;
+                document.getElementById('stat-cha').innerText = (myHero.stats.CHA >= 0 ? '+' : '') + myHero.stats.CHA;
+            }
 
             var roleEl = document.getElementById('display-player-role');
             if (roleEl) {
                 roleEl.innerHTML = 
                     '<div class="player-info-hud">' +
-                        '<img src="' + (myHero.avatar || getAvatarUrl(myHero.name)) + '" class="avatar-hud">' +
+                        '<img src="' + (myHero.avatar || updateCustomAvatar('player')) + '" class="avatar-hud">' +
                         '<span class="badge">' + myHero.name + ' (' + myHero.role + ')' + (isHost ? ' [Host]' : '') + '</span>' +
                     '</div>';
             }
@@ -959,13 +1157,14 @@
                         party[existingIdx].id = data.hero.id;
                         if (data.hero.gender) party[existingIdx].gender = data.hero.gender;
                         if (data.hero.avatar) party[existingIdx].avatar = data.hero.avatar;
+                        if (data.hero.stats) party[existingIdx].stats = data.hero.stats;
                         broadcastToAll({ type: 'RESTORE_HERO_STATS', hero: party[existingIdx] });
                         broadcastToAll({ type: 'SYSTEM_MSG', text: '⚔️ <b>' + party[existingIdx].name + '</b> has returned!' });
                     } else {
                         party.push(data.hero);
                         broadcastToAll({ 
                             type: 'SYSTEM_MSG', 
-                            text: '⚔️ <img src="' + (data.hero.avatar || getAvatarUrl(data.hero.name)) + '" class="avatar-hud" style="vertical-align:middle; width:24px; height:24px; margin-right:4px;"><b>' + data.hero.name + '</b> (' + data.hero.gender + ') entered the realm!' 
+                            text: '⚔️ <img src="' + data.hero.avatar + '" class="avatar-hud" style="vertical-align:middle; width:24px; height:24px; margin-right:4px;"><b>' + data.hero.name + '</b> (' + data.hero.gender + ') entered the realm!' 
                         });
                     }
                     saveGameState();
@@ -974,14 +1173,15 @@
                         type: 'PROMPT_ROLL',
                         targetHero: data.heroName,
                         actionText: data.actionText,
-                        dieType: data.dieType || 20
+                        dieType: data.dieType || 20,
+                        stat: data.stat || "STR"
                     });
                 } else if (data.type === 'PLAYER_ROLLED') {
                     broadcastToAll({
                         type: 'SYSTEM_MSG',
-                        text: '🎲 <b>' + data.heroName + '</b> rolled <b>' + data.roll + '</b> on a d' + data.dieType + ' (Total: <b>' + data.total + '</b>) for: "' + data.actionText + '"!'
+                        text: '🎲 <b>' + data.heroName + '</b> rolled <b>' + data.roll + '</b> on a d' + data.dieType + ' (' + data.stat + ' Mod ' + (data.mod >= 0 ? '+' : '') + data.mod + ' = <b>' + data.total + '</b>) for: "' + data.actionText + '"!'
                     });
-                    triggerGeminiResolution(data.heroName, data.actionText, data.roll, data.total, data.dieType);
+                    triggerGeminiResolution(data.heroName, data.actionText, data.roll, data.total, data.dieType, data.stat);
                 } else if (data.type === 'HERO_PURCHASE') {
                     var pIndex = party.findIndex(function(p) { return p.name.toLowerCase() === data.heroName.toLowerCase(); });
                     if (pIndex !== -1) party[pIndex] = data.hero;
@@ -1018,9 +1218,14 @@
                     myHero.level += 1;
                     myHero.maxHp += 5;
                     myHero.hp = myHero.maxHp;
-                    myHero.mod += 1;
+                    
+                    // Increment each ability stat on level advancement
+                    Object.keys(myHero.stats).forEach(function(s) {
+                        myHero.stats[s] += 1;
+                    });
+
                     renderHeroHUD();
-                    narrativeBox.innerHTML += '<div class="levelup-banner">🌟 LEVEL UP! ' + myHero.name + ' reached Level ' + myHero.level + '! HP & Mod increased!</div>';
+                    narrativeBox.innerHTML += '<div class="levelup-banner">🌟 LEVEL UP! ' + myHero.name + ' reached Level ' + myHero.level + '! HP & Core Stats increased!</div>';
                     narrativeBox.scrollTop = narrativeBox.scrollHeight;
                     speakNarrative("Level up! " + myHero.name + " reached level " + myHero.level);
                 }
@@ -1044,8 +1249,8 @@
                     data.choices.forEach(function(choice) {
                         var btn = document.createElement('button');
                         btn.className = 'btn';
-                        btn.innerText = choice.text;
-                        btn.onclick = function() { selectAction(choice.text, choice.dieType || 20); };
+                        btn.innerText = choice.text + ' [' + choice.stat + ' / d' + choice.dieType + ']';
+                        btn.onclick = function() { selectAction(choice.text, choice.dieType || 20, choice.stat || "STR"); };
                         choicesBox.appendChild(btn);
                     });
                     speakNarrative(data.narrative + ". It is your turn to act.");
@@ -1060,7 +1265,10 @@
 
                 if (myHero && data.targetHero === myHero.name) {
                     requiredDieSides = data.dieType || 20;
-                    turnNotice.innerText = 'Your check! Roll your glowing d' + requiredDieSides + '!';
+                    pendingStatRequired = data.stat || "STR";
+                    var currentStatMod = (myHero.stats && myHero.stats[pendingStatRequired] !== undefined) ? myHero.stats[pendingStatRequired] : 0;
+                    
+                    turnNotice.innerText = 'Your check! Roll your glowing d' + requiredDieSides + ' (' + pendingStatRequired + ' Mod: ' + (currentStatMod >= 0 ? '+' : '') + currentStatMod + ')';
                     var activeDie = document.getElementById('die-d' + requiredDieSides);
                     if (activeDie) {
                         activeDie.classList.add('ready-to-roll');
@@ -1068,7 +1276,7 @@
                     pendingActionText = data.actionText;
                     speakNarrative("You selected " + data.actionText + ". Roll your d " + requiredDieSides);
                 } else {
-                    turnNotice.innerText = data.targetHero + ' is rolling the d' + (data.dieType || 20) + '...';
+                    turnNotice.innerText = data.targetHero + ' is rolling the d' + (data.dieType || 20) + ' for ' + (data.stat || 'a check') + '...';
                 }
             }
         }
@@ -1078,15 +1286,16 @@
             dice.forEach(function(d) { d.classList.remove('ready-to-roll'); });
         }
 
-        // --- 6. ACTIONS & MULTI-DICE ROLLS ---
-        function selectAction(choiceText, dieType) {
+        // --- 6. ACTIONS & MULTI-DICE STAT-BASED ROLLS ---
+        function selectAction(choiceText, dieType, stat) {
             document.getElementById('dynamic-choices').innerHTML = '';
             document.getElementById('turn-notice').innerText = 'Broadcasting choice...';
             broadcastToAll({
                 type: 'PLAYER_ACTION_CHOSEN',
                 heroName: myHero.name,
                 actionText: choiceText,
-                dieType: dieType || 20
+                dieType: dieType || 20,
+                stat: stat || "STR"
             });
         }
 
@@ -1096,9 +1305,10 @@
 
             disableAllDice();
             var naturalRoll = Math.floor(Math.random() * sides) + 1;
-            var totalWithMod = naturalRoll + myHero.mod;
+            var statMod = (myHero.stats && myHero.stats[pendingStatRequired] !== undefined) ? myHero.stats[pendingStatRequired] : 0;
+            var totalWithMod = naturalRoll + statMod;
 
-            document.getElementById('turn-notice').innerText = 'Rolled ' + naturalRoll + ' on d' + sides + ' (+ ' + myHero.mod + ' Mod = ' + totalWithMod + ')! Resolving...';
+            document.getElementById('turn-notice').innerText = 'Rolled ' + naturalRoll + ' on d' + sides + ' (' + pendingStatRequired + ' ' + (statMod >= 0 ? '+' : '') + statMod + ' = ' + totalWithMod + ')! Resolving...';
             speakNarrative("You rolled a " + naturalRoll + " on a d " + sides + "!");
 
             broadcastToAll({
@@ -1107,7 +1317,9 @@
                 actionText: pendingActionText,
                 roll: naturalRoll,
                 total: totalWithMod,
-                dieType: sides
+                dieType: sides,
+                stat: pendingStatRequired,
+                mod: statMod
             });
         }
 
@@ -1121,7 +1333,7 @@
             document.getElementById('dynamic-choices').innerHTML = '';
             gameHistory.push({
                 role: "user",
-                parts: [{ text: "The heroes have regrouped. Summarize current events respecting each hero's pronouns, assign an action, and state which polyhedral die is needed (d4, d6, d8, d10, d12, d20, d100)." }]
+                parts: [{ text: "The heroes have regrouped. Summarize current events strictly respecting stated pronouns, designate a hero to act, specify which polyhedral die is needed (d4, d6, d8, d10, d12, d20, d100), and link the check to a core stat (STR, DEX, CON, INT, WIS, CHA)." }]
             });
             fetchAndBroadcastGemini();
         }
@@ -1132,7 +1344,8 @@
                 return;
             }
             var partyRoster = party.map(function(p) { 
-                return p.name + ' (' + (p.gender || "she/her") + ', Level ' + p.level + ' ' + p.role + ')'; 
+                var statsSummary = p.stats ? 'STR:' + p.stats.STR + ' DEX:' + p.stats.DEX + ' INT:' + p.stats.INT + ' WIS:' + p.stats.WIS : '';
+                return p.name + ' (' + (p.gender || "she/her") + ', Level ' + p.level + ' ' + p.role + ' [' + statsSummary + '])'; 
             }).join(', ');
 
             gameHistory = [
@@ -1141,16 +1354,16 @@
                     parts: [{
                         text: 'You are the DM running a ' + activeGenre + ' campaign for: ' + partyRoster + '.\n' +
 'CRITICAL RULES:\n' +
-'1. Respect stated pronouns strictly.\n' +
-'2. Multi-dice selection: Each option in "choices" must specify which die type fits the task from [4, 6, 8, 10, 12, 20, 100]. (e.g. d20 for skill checks, d6/d8 for attack/stealth, d4 for lockpick, d100 for luck/loot search).\n' +
-'3. Award Gil: When the party discovers treasure, loots fallen enemies, or completes a task, specify "gilAward" (integer amount, or 0) and "gilTarget" ("ALL" or specific hero name).\n' +
+'1. Strict Pronoun Adherence: Always use each hero\'s designated pronouns (e.g. if Drew is listed as she/her, NEVER use he/him).\n' +
+'2. Multi-dice & Ability Mapping: Every action in "choices" MUST indicate the required die type from [4, 6, 8, 10, 12, 20, 100] AND the relevant core stat from ["STR", "DEX", "CON", "INT", "WIS", "CHA"].\n' +
+'3. Award Gil: When looting, defeating enemies, or discovering treasure, include "gilAward" (> 0) and "gilTarget" ("ALL" or specific name).\n' +
 'Respond ONLY with valid JSON structured exactly as:\n' +
 '{\n' +
 '  "narrative": "scene description",\n' +
 '  "targetHero": "specific hero name, or ALL",\n' +
 '  "choices": [\n' +
-'    {"text": "Action option 1", "dieType": 20},\n' +
-'    {"text": "Action option 2", "dieType": 8}\n' +
+'    {"text": "Bypass security grid", "dieType": 20, "stat": "INT"},\n' +
+'    {"text": "Force open ventilation hatch", "dieType": 12, "stat": "STR"}\n' +
 '  ],\n' +
 '  "completedTask": false,\n' +
 '  "levelUpHero": "NONE",\n' +
@@ -1164,7 +1377,7 @@
                     parts: [{ text: JSON.stringify({ 
                         narrative: "Ready.", 
                         targetHero: "ALL", 
-                        choices: [{"text": "Begin", "dieType": 20}], 
+                        choices: [{"text": "Begin", "dieType": 20, "stat": "STR"}], 
                         completedTask: false, 
                         levelUpHero: "NONE",
                         gilAward: 0,
@@ -1173,7 +1386,7 @@
                 },
                 {
                     role: "user",
-                    parts: [{ text: "Begin the quest. Introduce the opening dilemma and call on a specific hero with appropriate polyhedral die options." }]
+                    parts: [{ text: "Begin the quest. Introduce the opening dilemma and call on a specific hero with appropriate polyhedral die and core stat checks." }]
                 }
             ];
 
@@ -1181,15 +1394,15 @@
             fetchAndBroadcastGemini();
         }
 
-        async function triggerGeminiResolution(heroName, action, naturalRoll, total, sides) {
+        async function triggerGeminiResolution(heroName, action, naturalRoll, total, sides, stat) {
             var activeHero = party.find(function(p) { return p.name.toLowerCase() === heroName.toLowerCase(); });
             var pronounNote = activeHero && activeHero.gender ? ' [Pronouns: ' + activeHero.gender + ']' : '';
 
             gameHistory.push({
                 role: "user",
                 parts: [{
-                    text: '[Turn Check] ' + heroName + pronounNote + ' rolled a ' + naturalRoll + ' on a d' + sides + ' (Total: ' + total + ') for: "' + action + '".\n' +
-'Describe the outcome respecting ' + heroName + '\'s pronouns. If they find loot, defeat an enemy, or open a chest, include a "gilAward" (> 0). Designate the next hero to act and offer actions with appropriate dieTypes (4, 6, 8, 10, 12, 20, or 100).'
+                    text: '[Turn Check] ' + heroName + pronounNote + ' rolled a natural ' + naturalRoll + ' on a d' + sides + ' with ' + stat + ' modifier (Total: ' + total + ') attempting: "' + action + '".\n' +
+'Describe the outcome respecting ' + heroName + '\'s pronouns. If they find loot, defeat an enemy, or open a chest, include a "gilAward" (> 0). Designate the next hero to act and offer action choices specifying both dieType (4, 6, 8, 10, 12, 20, 100) and stat (STR, DEX, CON, INT, WIS, CHA).'
                 }]
             });
             fetchAndBroadcastGemini();
@@ -1224,7 +1437,7 @@
 
                 gameHistory.push({ role: "model", parts: [{ text: rawText }] });
 
-                // Gil Loot Handling
+                // Gil Award Resolution
                 if (parsed.gilAward && parsed.gilAward > 0) {
                     broadcastToAll({
                         type: 'AWARD_GIL',
@@ -1233,7 +1446,7 @@
                     });
                 }
 
-                // Level Up Handling
+                // Level Up Resolution
                 if (parsed.completedTask && parsed.levelUpHero && parsed.levelUpHero !== 'NONE') {
                     broadcastToAll({
                         type: 'LEVEL_UP',
@@ -1241,10 +1454,14 @@
                     });
                 }
 
-                // Format choices for array safety
+                // Format choices for schema guarantees
                 var formattedChoices = (parsed.choices || []).map(function(c) {
-                    if (typeof c === 'string') return { text: c, dieType: 20 };
-                    return c;
+                    if (typeof c === 'string') return { text: c, dieType: 20, stat: "STR" };
+                    return {
+                        text: c.text,
+                        dieType: c.dieType || 20,
+                        stat: c.stat || "STR"
+                    };
                 });
 
                 broadcastToAll({
