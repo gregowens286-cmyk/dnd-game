@@ -17,6 +17,7 @@
             --success-green: #27ae60;
             --save-blue: #2980b9;
             --shop-purple: #8e44ad;
+            --companion-teal: #16a085;
         }
 
         html, body {
@@ -126,7 +127,21 @@
             line-height: 1.45;
         }
 
-        /* Core Stat Banners */
+        /* Companion Banner */
+        #companion-banner {
+            display: none;
+            background: #1e3734;
+            border: 1px solid var(--companion-teal);
+            border-radius: 6px;
+            padding: 6px 10px;
+            margin-bottom: 6px;
+            font-size: 0.8rem;
+            color: #a3e4d7;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Primary Stat Banner */
         .primary-stat-banner {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -142,6 +157,7 @@
         .stat-box { font-size: 0.75rem; }
         .stat-val { font-size: 1.1rem; font-weight: bold; color: var(--active-gold); }
 
+        /* Core 6 Ability Scores Bar */
         .abilities-bar {
             display: grid;
             grid-template-columns: repeat(6, 1fr);
@@ -202,6 +218,7 @@
         .btn-green { background-color: var(--success-green); }
         .btn-blue { background-color: var(--save-blue); }
         .btn-purple { background-color: var(--shop-purple); }
+        .btn-teal { background-color: var(--companion-teal); }
 
         /* 7 Polyhedral Dice Bar */
         #dice-container {
@@ -412,11 +429,23 @@
                 </select>
             </div>
             <div class="input-group">
-                <label>Your Role</label>
+                <label>Lineage / Race</label>
+                <select id="host-hero-race">
+                    <option value="Human">Human (Versatile, +1 All Stats)</option>
+                    <option value="Elf">Elf (Agile, +2 DEX, +1 WIS)</option>
+                    <option value="Dwarf">Dwarf (Sturdy, +2 CON, +1 STR, +5 HP)</option>
+                    <option value="Halfling">Halfling (Nimble, +2 DEX, +1 CHA)</option>
+                    <option value="Dragonborn">Dragonborn (Draconic Power, +2 STR, +1 CHA)</option>
+                    <option value="Tiefling">Tiefling (Infernal Magic, +2 CHA, +1 INT)</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Class / Role</label>
                 <select id="host-hero-role">
                     <option value="Warrior">Warrior / Vanguard (High HP, Heavy AC)</option>
-                    <option value="Mage">Mage / Specialist (High INT/Magic)</option>
-                    <option value="Rogue">Rogue / Infiltrator (High DEX/Stealth)</option>
+                    <option value="Barbarian">Barbarian / Berserker (Max HP, Heavy STR)</option>
+                    <option value="Rogue">Rogue / Infiltrator (High DEX, Stealth)</option>
+                    <option value="Mage">Mage / Specialist (High INT, Arcana)</option>
                     <option value="Cleric">Cleric / Support (Balanced Defense, High WIS)</option>
                 </select>
             </div>
@@ -488,11 +517,23 @@
                 </select>
             </div>
             <div class="input-group">
-                <label>Role</label>
+                <label>Lineage / Race</label>
+                <select id="player-hero-race">
+                    <option value="Human">Human (Versatile, +1 All Stats)</option>
+                    <option value="Elf">Elf (Agile, +2 DEX, +1 WIS)</option>
+                    <option value="Dwarf">Dwarf (Sturdy, +2 CON, +1 STR, +5 HP)</option>
+                    <option value="Halfling">Halfling (Nimble, +2 DEX, +1 CHA)</option>
+                    <option value="Dragonborn">Dragonborn (Draconic Power, +2 STR, +1 CHA)</option>
+                    <option value="Tiefling">Tiefling (Infernal Magic, +2 CHA, +1 INT)</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Class / Role</label>
                 <select id="player-hero-role">
                     <option value="Warrior">Warrior / Vanguard (High HP, Heavy AC)</option>
-                    <option value="Mage">Mage / Specialist (High INT/Magic)</option>
-                    <option value="Rogue">Rogue / Infiltrator (High DEX/Stealth)</option>
+                    <option value="Barbarian">Barbarian / Berserker (Max HP, Heavy STR)</option>
+                    <option value="Rogue">Rogue / Infiltrator (High DEX, Stealth)</option>
+                    <option value="Mage">Mage / Specialist (High INT, Arcana)</option>
                     <option value="Cleric">Cleric / Support (Balanced Defense, High WIS)</option>
                 </select>
             </div>
@@ -510,10 +551,14 @@
 
         <div class="utility-bar">
             <button id="tts-toggle-btn" class="btn btn-green" style="padding:6px 10px; margin:0; font-size:0.8rem;" onclick="toggleNarrationAudio()">🔊 Narration: ON</button>
-            <button id="shop-btn" class="btn btn-purple" style="padding:6px 10px; margin:0; font-size:0.8rem;" onclick="openShopModal()">🛒 Shop</button>
+            <button id="haven-btn" class="btn btn-teal" style="padding:6px 10px; margin:0; font-size:0.8rem;" onclick="triggerHavenRest()">🏕️ Haven / Rest</button>
+            <button id="shop-btn" class="btn btn-purple" style="padding:6px 10px; margin:0; font-size:0.8rem; display:none;" onclick="openShopModal()">🛒 Trader Found!</button>
             <button id="mic-toggle-btn" class="btn" style="padding:6px 10px; margin:0; font-size:0.8rem; background:#555;" onclick="toggleMicrophone()">🎙️ Mic: OFF</button>
             <button id="save-btn" class="btn btn-blue" style="padding:6px 10px; margin:0; font-size:0.8rem; display:none;" onclick="manualSaveGame()">💾 Save</button>
         </div>
+
+        <!-- Companion Banner -->
+        <div id="companion-banner">🐾 <span id="companion-text">No companion joined yet.</span></div>
 
         <!-- Primary Stat Banner -->
         <div class="primary-stat-banner" id="stats-banner">
@@ -579,6 +624,7 @@
         var currentTopic = "";
 
         var party = [];
+        var partyCompanions = [];
         var myHero = null;
         var pendingActionText = "";
         var pendingStatRequired = "STR";
@@ -586,7 +632,7 @@
         var gameHistory = [];
         var activeGenre = "Medieval Fantasy";
 
-        // Store Inventory (Cost & Stat Buffs across AC, HP, and Ability Scores)
+        // Store Inventory
         var STORE_ITEMS = [
             { id: "potion_hp", name: "Health Elixir", cost: 25, hpBuff: 10, acBuff: 0, statBuffKey: null, statBuffVal: 0, desc: "+10 Max & Current HP" },
             { id: "iron_shield", name: "Reinforced Shield", cost: 50, hpBuff: 0, acBuff: 2, statBuffKey: null, statBuffVal: 0, desc: "+2 Armor Class (AC)" },
@@ -644,35 +690,67 @@
             }
         }
 
-        // --- ROLE ABILITY MAPPING ---
-        function getClassArchetypeStats(role) {
+        // --- STATS COMPUTATION: COMBINING CLASS AND RACE ---
+        function calculateHeroStats(role, race) {
+            var base = {
+                hp: 20, maxHp: 20, ac: 13,
+                stats: { STR: 1, DEX: 1, CON: 1, INT: 1, WIS: 1, CHA: 1 }
+            };
+
+            // Class Archetype Defaults
             switch (role) {
                 case "Warrior":
-                    return {
-                        hp: 26, maxHp: 26, ac: 16,
-                        stats: { STR: 3, DEX: 1, CON: 2, INT: 0, WIS: 1, CHA: 1 }
-                    };
+                    base.hp = 26; base.maxHp = 26; base.ac = 16;
+                    base.stats = { STR: 3, DEX: 1, CON: 2, INT: 0, WIS: 1, CHA: 1 };
+                    break;
+                case "Barbarian":
+                    base.hp = 30; base.maxHp = 30; base.ac = 14;
+                    base.stats = { STR: 4, DEX: 2, CON: 3, INT: -1, WIS: 0, CHA: 0 };
+                    break;
                 case "Rogue":
-                    return {
-                        hp: 18, maxHp: 18, ac: 14,
-                        stats: { STR: 1, DEX: 4, CON: 1, INT: 2, WIS: 1, CHA: 2 }
-                    };
+                    base.hp = 18; base.maxHp = 18; base.ac = 14;
+                    base.stats = { STR: 1, DEX: 4, CON: 1, INT: 2, WIS: 1, CHA: 2 };
+                    break;
                 case "Mage":
-                    return {
-                        hp: 16, maxHp: 16, ac: 11,
-                        stats: { STR: 0, DEX: 2, CON: 1, INT: 4, WIS: 2, CHA: 1 }
-                    };
+                    base.hp = 16; base.maxHp = 16; base.ac = 11;
+                    base.stats = { STR: 0, DEX: 2, CON: 1, INT: 4, WIS: 2, CHA: 1 };
+                    break;
                 case "Cleric":
-                    return {
-                        hp: 22, maxHp: 22, ac: 15,
-                        stats: { STR: 2, DEX: 0, CON: 2, INT: 1, WIS: 3, CHA: 1 }
-                    };
-                default:
-                    return {
-                        hp: 20, maxHp: 20, ac: 13,
-                        stats: { STR: 2, DEX: 2, CON: 2, INT: 2, WIS: 2, CHA: 2 }
-                    };
+                    base.hp = 22; base.maxHp = 22; base.ac = 15;
+                    base.stats = { STR: 2, DEX: 0, CON: 2, INT: 1, WIS: 3, CHA: 1 };
+                    break;
             }
+
+            // Stack Race / Heritage Bonuses
+            switch (race) {
+                case "Human":
+                    Object.keys(base.stats).forEach(function(k) { base.stats[k] += 1; });
+                    break;
+                case "Elf":
+                    base.stats.DEX += 2;
+                    base.stats.WIS += 1;
+                    break;
+                case "Dwarf":
+                    base.stats.CON += 2;
+                    base.stats.STR += 1;
+                    base.hp += 5;
+                    base.maxHp += 5;
+                    break;
+                case "Halfling":
+                    base.stats.DEX += 2;
+                    base.stats.CHA += 1;
+                    break;
+                case "Dragonborn":
+                    base.stats.STR += 2;
+                    base.stats.CHA += 1;
+                    break;
+                case "Tiefling":
+                    base.stats.CHA += 2;
+                    base.stats.INT += 1;
+                    break;
+            }
+
+            return base;
         }
 
         // --- AVATAR BUILDER ENGINE ---
@@ -739,7 +817,7 @@
                 try {
                     var parsed = JSON.parse(savedData);
                     document.getElementById('resume-container').style.display = 'block';
-                    var rosterNames = parsed.party.map(function(p) { return p.name + " (" + (p.gender || "she/her") + ", " + (p.gil || 0) + " Gil)"; }).join(", ");
+                    var rosterNames = parsed.party.map(function(p) { return p.name + " (" + (p.race || "Human") + " " + p.role + ", " + (p.gil || 0) + " Gil)"; }).join(", ");
                     document.getElementById('save-info').innerText = "Saved: " + parsed.genre + " (" + rosterNames + ") - " + parsed.date;
                 } catch (e) {}
             }
@@ -761,6 +839,7 @@
             var savePayload = {
                 genre: activeGenre,
                 party: party,
+                companions: partyCompanions,
                 history: gameHistory,
                 narrative: currentNarrative,
                 date: new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
@@ -834,8 +913,6 @@
             if (peerAudioConnections[targetId]) return peerAudioConnections[targetId];
             var pc = new RTCPeerConnection(rtcConfiguration);
             peerAudioConnections[targetId] = pc;
-
-            // Ensure bi-directional audio receiving capabilities exist prior to local mic streaming
             pc.addTransceiver('audio', { direction: 'sendrecv' });
 
             if (localMediaStream) {
@@ -898,6 +975,27 @@
             }
         }
 
+        // --- HAVEN / RESTING MECHANIC ---
+        function triggerHavenRest() {
+            if (!confirm("Rest at a Haven / Safehouse? This restores all heroes' HP.")) return;
+            
+            myHero.hp = myHero.maxHp;
+            renderHeroHUD();
+
+            broadcastToAll({
+                type: 'PARTY_RESTED',
+                heroName: myHero.name
+            });
+
+            if (isHost) {
+                gameHistory.push({
+                    role: "user",
+                    parts: [{ text: "[Rest Phase] The party has found a safe haven (fortified hideout, warm tavern, or secure bunker) to rest. Full HP restored. Describe the refuge, show peaceful character interactions, and propose calm strategic choices before venturing back out." }]
+                });
+                fetchAndBroadcastGemini();
+            }
+        }
+
         // --- SHOP ENGINE ---
         function openShopModal() {
             if (!myHero) return;
@@ -954,7 +1052,6 @@
             if (!myHero.inventory) myHero.inventory = [];
             myHero.inventory.push(item.id);
 
-            // Apply Buffs to Base HP, AC, and Core Stats
             myHero.maxHp += item.hpBuff;
             myHero.hp += item.hpBuff;
             myHero.ac += item.acBuff;
@@ -982,28 +1079,31 @@
 
                 var hostName = document.getElementById('host-hero-name').value.trim() || "Party Leader";
                 var hostGender = document.getElementById('host-hero-gender').value;
+                var hostRace = document.getElementById('host-hero-race').value;
                 var hostRole = document.getElementById('host-hero-role').value;
                 var hostAvatar = updateCustomAvatar('host');
 
-                var archetypes = getClassArchetypeStats(hostRole);
+                var calculated = calculateHeroStats(hostRole, hostRace);
 
                 myHero = {
                     id: myClientId,
                     name: hostName,
                     gender: hostGender,
+                    race: hostRace,
                     role: hostRole,
                     avatar: hostAvatar,
                     level: 1,
-                    hp: archetypes.hp,
-                    maxHp: archetypes.maxHp,
-                    ac: archetypes.ac,
-                    stats: archetypes.stats,
+                    hp: calculated.hp,
+                    maxHp: calculated.maxHp,
+                    ac: calculated.ac,
+                    stats: calculated.stats,
                     gil: 50,
                     inventory: [],
                     xp: 0
                 };
 
                 party = [myHero];
+                partyCompanions = [];
                 gameHistory = [];
                 startHostSession(false);
             } catch (e) {
@@ -1021,14 +1121,16 @@
             currentTopic = 'dnd-game-room/' + currentRoomCode;
             activeGenre = parsed.genre;
             party = parsed.party;
+            partyCompanions = parsed.companions || [];
             gameHistory = parsed.history;
 
             myHero = party[0];
             myHero.id = myClientId;
+            if (!myHero.race) myHero.race = "Human";
             if (!myHero.gil) myHero.gil = 50;
             if (!myHero.inventory) myHero.inventory = [];
             if (!myHero.avatar) myHero.avatar = updateCustomAvatar('host');
-            if (!myHero.stats) myHero.stats = getClassArchetypeStats(myHero.role).stats;
+            if (!myHero.stats) myHero.stats = calculateHeroStats(myHero.role, myHero.race).stats;
 
             startHostSession(true, parsed.narrative);
         }
@@ -1038,10 +1140,11 @@
             document.getElementById('display-room-code').innerHTML = '<span id="net-status-dot" class="status-dot"></span> Room: ' + currentRoomCode;
             document.getElementById('save-btn').style.display = 'inline-block';
             renderHeroHUD();
+            updateCompanionHUD();
 
             document.getElementById('narrative-box').innerHTML = 
                 '<b>Room Code: ' + currentRoomCode + '</b><br>' +
-                '⚔️ <b>' + myHero.name + '</b> (' + myHero.gender + ', ' + myHero.role + ') is ready.<br>' +
+                '⚔️ <b>' + myHero.name + '</b> (' + myHero.gender + ', ' + myHero.race + ' ' + myHero.role + ') is ready.<br>' +
                 'Connecting to party relay...';
 
             connectBroker(function() {
@@ -1070,6 +1173,7 @@
                 var codeInput = document.getElementById('join-room-code').value.trim().toUpperCase();
                 var nameInput = document.getElementById('player-hero-name').value.trim() || "Adventurer";
                 var genderInput = document.getElementById('player-hero-gender').value;
+                var raceInput = document.getElementById('player-hero-race').value;
                 var roleInput = document.getElementById('player-hero-role').value;
                 var playerAvatar = updateCustomAvatar('player');
 
@@ -1081,19 +1185,20 @@
                 currentRoomCode = codeInput;
                 currentTopic = 'dnd-game-room/' + currentRoomCode;
 
-                var archetypes = getClassArchetypeStats(roleInput);
+                var calculated = calculateHeroStats(roleInput, raceInput);
 
                 myHero = {
                     id: myClientId,
                     name: nameInput,
                     gender: genderInput,
+                    race: raceInput,
                     role: roleInput,
                     avatar: playerAvatar,
                     level: 1,
-                    hp: archetypes.hp,
-                    maxHp: archetypes.maxHp,
-                    ac: archetypes.ac,
-                    stats: archetypes.stats,
+                    hp: calculated.hp,
+                    maxHp: calculated.maxHp,
+                    ac: calculated.ac,
+                    stats: calculated.stats,
                     gil: 50,
                     inventory: [],
                     xp: 0
@@ -1137,8 +1242,20 @@
                 roleEl.innerHTML = 
                     '<div class="player-info-hud">' +
                         '<img src="' + (myHero.avatar || updateCustomAvatar('player')) + '" class="avatar-hud">' +
-                        '<span class="badge">' + myHero.name + ' (' + myHero.role + ')' + (isHost ? ' [Host]' : '') + '</span>' +
+                        '<span class="badge">' + myHero.name + ' (' + (myHero.race || 'Human') + ' ' + myHero.role + ')' + (isHost ? ' [Host]' : '') + '</span>' +
                     '</div>';
+            }
+        }
+
+        function updateCompanionHUD() {
+            var banner = document.getElementById('companion-banner');
+            var text = document.getElementById('companion-text');
+            if (partyCompanions && partyCompanions.length > 0) {
+                var compList = partyCompanions.map(function(c) { return '<b>' + c.name + '</b> (' + c.type + ', ' + c.buffDesc + ')'; }).join(' | ');
+                text.innerHTML = compList;
+                banner.style.display = 'flex';
+            } else {
+                banner.style.display = 'none';
             }
         }
 
@@ -1156,16 +1273,19 @@
                     if (existingIdx !== -1) {
                         party[existingIdx].id = data.hero.id;
                         if (data.hero.gender) party[existingIdx].gender = data.hero.gender;
+                        if (data.hero.race) party[existingIdx].race = data.hero.race;
                         if (data.hero.avatar) party[existingIdx].avatar = data.hero.avatar;
                         if (data.hero.stats) party[existingIdx].stats = data.hero.stats;
                         broadcastToAll({ type: 'RESTORE_HERO_STATS', hero: party[existingIdx] });
+                        broadcastToAll({ type: 'SYNC_COMPANIONS', companions: partyCompanions });
                         broadcastToAll({ type: 'SYSTEM_MSG', text: '⚔️ <b>' + party[existingIdx].name + '</b> has returned!' });
                     } else {
                         party.push(data.hero);
                         broadcastToAll({ 
                             type: 'SYSTEM_MSG', 
-                            text: '⚔️ <img src="' + data.hero.avatar + '" class="avatar-hud" style="vertical-align:middle; width:24px; height:24px; margin-right:4px;"><b>' + data.hero.name + '</b> (' + data.hero.gender + ') entered the realm!' 
+                            text: '⚔️ <img src="' + data.hero.avatar + '" class="avatar-hud" style="vertical-align:middle; width:24px; height:24px; margin-right:4px;"><b>' + data.hero.name + '</b> (' + data.hero.gender + ', ' + (data.hero.race || 'Human') + ' ' + data.hero.role + ') entered the realm!' 
                         });
+                        broadcastToAll({ type: 'SYNC_COMPANIONS', companions: partyCompanions });
                     }
                     saveGameState();
                 } else if (data.type === 'PLAYER_ACTION_CHOSEN') {
@@ -1201,12 +1321,33 @@
             var narrativeBox = document.getElementById('narrative-box');
             var choicesBox = document.getElementById('dynamic-choices');
             var turnNotice = document.getElementById('turn-notice');
+            var shopBtn = document.getElementById('shop-btn');
 
             if (data.type === 'SYSTEM_MSG') {
                 narrativeBox.innerHTML += '<br>' + data.text;
                 narrativeBox.scrollTop = narrativeBox.scrollHeight;
                 speakNarrative(data.text);
             } 
+            else if (data.type === 'PARTY_RESTED') {
+                if (myHero) {
+                    myHero.hp = myHero.maxHp;
+                    renderHeroHUD();
+                }
+                narrativeBox.innerHTML += '<br><b style="color:var(--success-green);">🏕️ The party took a rest! All HP fully restored.</b>';
+                narrativeBox.scrollTop = narrativeBox.scrollHeight;
+                speakNarrative("Party rested. All health restored.");
+            }
+            else if (data.type === 'SYNC_COMPANIONS') {
+                partyCompanions = data.companions || [];
+                updateCompanionHUD();
+            }
+            else if (data.type === 'ADD_COMPANION') {
+                partyCompanions.push(data.companion);
+                updateCompanionHUD();
+                narrativeBox.innerHTML += '<br><b style="color:var(--companion-teal);">🐾 ' + data.companion.name + ' (' + data.companion.type + ') has joined the party! [' + data.companion.buffDesc + ']</b>';
+                narrativeBox.scrollTop = narrativeBox.scrollHeight;
+                speakNarrative(data.companion.name + " the companion has joined the party!");
+            }
             else if (data.type === 'RESTORE_HERO_STATS') {
                 if (myHero && myHero.name.toLowerCase() === data.hero.name.toLowerCase()) {
                     myHero = data.hero;
@@ -1219,7 +1360,6 @@
                     myHero.maxHp += 5;
                     myHero.hp = myHero.maxHp;
                     
-                    // Increment each ability stat on level advancement
                     Object.keys(myHero.stats).forEach(function(s) {
                         myHero.stats[s] += 1;
                     });
@@ -1243,6 +1383,12 @@
                 narrativeBox.innerHTML = data.narrative;
                 choicesBox.innerHTML = '';
                 disableAllDice();
+
+                if (data.merchantAvailable) {
+                    shopBtn.style.display = 'inline-block';
+                } else {
+                    shopBtn.style.display = 'none';
+                }
 
                 if (myHero && (data.targetHero === 'ALL' || data.targetHero === myHero.name)) {
                     turnNotice.innerText = 'Your turn! Select your action:';
@@ -1268,7 +1414,13 @@
                     pendingStatRequired = data.stat || "STR";
                     var currentStatMod = (myHero.stats && myHero.stats[pendingStatRequired] !== undefined) ? myHero.stats[pendingStatRequired] : 0;
                     
-                    turnNotice.innerText = 'Your check! Roll your glowing d' + requiredDieSides + ' (' + pendingStatRequired + ' Mod: ' + (currentStatMod >= 0 ? '+' : '') + currentStatMod + ')';
+                    var companionBonus = 0;
+                    partyCompanions.forEach(function(c) {
+                        if (c.buffStat === pendingStatRequired) companionBonus += c.buffVal;
+                    });
+                    var totalMod = currentStatMod + companionBonus;
+
+                    turnNotice.innerText = 'Your check! Roll d' + requiredDieSides + ' (' + pendingStatRequired + ' Mod: ' + (totalMod >= 0 ? '+' : '') + totalMod + (companionBonus > 0 ? ' [🐾 +' + companionBonus + ']' : '') + ')';
                     var activeDie = document.getElementById('die-d' + requiredDieSides);
                     if (activeDie) {
                         activeDie.classList.add('ready-to-roll');
@@ -1306,9 +1458,15 @@
             disableAllDice();
             var naturalRoll = Math.floor(Math.random() * sides) + 1;
             var statMod = (myHero.stats && myHero.stats[pendingStatRequired] !== undefined) ? myHero.stats[pendingStatRequired] : 0;
-            var totalWithMod = naturalRoll + statMod;
 
-            document.getElementById('turn-notice').innerText = 'Rolled ' + naturalRoll + ' on d' + sides + ' (' + pendingStatRequired + ' ' + (statMod >= 0 ? '+' : '') + statMod + ' = ' + totalWithMod + ')! Resolving...';
+            var companionBonus = 0;
+            partyCompanions.forEach(function(c) {
+                if (c.buffStat === pendingStatRequired) companionBonus += c.buffVal;
+            });
+            var totalMod = statMod + companionBonus;
+            var totalWithMod = naturalRoll + totalMod;
+
+            document.getElementById('turn-notice').innerText = 'Rolled ' + naturalRoll + ' on d' + sides + ' (' + pendingStatRequired + ' ' + (totalMod >= 0 ? '+' : '') + totalMod + ' = ' + totalWithMod + ')! Resolving...';
             speakNarrative("You rolled a " + naturalRoll + " on a d " + sides + "!");
 
             broadcastToAll({
@@ -1319,7 +1477,7 @@
                 total: totalWithMod,
                 dieType: sides,
                 stat: pendingStatRequired,
-                mod: statMod
+                mod: totalMod
             });
         }
 
@@ -1333,7 +1491,7 @@
             document.getElementById('dynamic-choices').innerHTML = '';
             gameHistory.push({
                 role: "user",
-                parts: [{ text: "The heroes have regrouped. Summarize current events strictly respecting stated pronouns, designate a hero to act, specify which polyhedral die is needed (d4, d6, d8, d10, d12, d20, d100), and link the check to a core stat (STR, DEX, CON, INT, WIS, CHA)." }]
+                parts: [{ text: "The heroes have regrouped. Summarize current events strictly respecting stated pronouns and heritage/races, designate a hero to act, specify which polyhedral die is needed (d4, d6, d8, d10, d12, d20, d100), and link the check to a core stat (STR, DEX, CON, INT, WIS, CHA)." }]
             });
             fetchAndBroadcastGemini();
         }
@@ -1345,7 +1503,7 @@
             }
             var partyRoster = party.map(function(p) { 
                 var statsSummary = p.stats ? 'STR:' + p.stats.STR + ' DEX:' + p.stats.DEX + ' INT:' + p.stats.INT + ' WIS:' + p.stats.WIS : '';
-                return p.name + ' (' + (p.gender || "she/her") + ', Level ' + p.level + ' ' + p.role + ' [' + statsSummary + '])'; 
+                return p.name + ' (' + (p.gender || "she/her") + ', ' + (p.race || "Human") + ' ' + p.role + ', Level ' + p.level + ' [' + statsSummary + '])'; 
             }).join(', ');
 
             gameHistory = [
@@ -1354,9 +1512,11 @@
                     parts: [{
                         text: 'You are the DM running a ' + activeGenre + ' campaign for: ' + partyRoster + '.\n' +
 'CRITICAL RULES:\n' +
-'1. Strict Pronoun Adherence: Always use each hero\'s designated pronouns (e.g. if Drew is listed as she/her, NEVER use he/him).\n' +
-'2. Multi-dice & Ability Mapping: Every action in "choices" MUST indicate the required die type from [4, 6, 8, 10, 12, 20, 100] AND the relevant core stat from ["STR", "DEX", "CON", "INT", "WIS", "CHA"].\n' +
-'3. Award Gil: When looting, defeating enemies, or discovering treasure, include "gilAward" (> 0) and "gilTarget" ("ALL" or specific name).\n' +
+'1. Strict Pronouns & Lineage: Always use each hero\'s designated pronouns (e.g. if Drew is listed as she/her, NEVER use he/him) and weave their race/lineage traits into the narrative.\n' +
+'2. Core Stats & Dice: Every action in "choices" MUST indicate a die type from [4, 6, 8, 10, 12, 20, 100] AND a relevant core stat from ["STR", "DEX", "CON", "INT", "WIS", "CHA"].\n' +
+'3. Conditional Shop: Set "merchantAvailable": true ONLY if the current scene contains an active shopkeeper, merchant bazaar, or black market. Otherwise set false.\n' +
+'4. Companions: If the party rescues, tames, or befriends an animal, drone, or NPC ally, include "newCompanion": {"name": "Rover", "type": "Guard Dog", "buffStat": "WIS", "buffVal": 1, "buffDesc": "+1 to Wisdom Perception"}. Otherwise set null.\n' +
+'5. Gil Awards: When looting or completing tasks, set "gilAward" (> 0) and "gilTarget" ("ALL" or specific name).\n' +
 'Respond ONLY with valid JSON structured exactly as:\n' +
 '{\n' +
 '  "narrative": "scene description",\n' +
@@ -1368,7 +1528,9 @@
 '  "completedTask": false,\n' +
 '  "levelUpHero": "NONE",\n' +
 '  "gilAward": 25,\n' +
-'  "gilTarget": "ALL"\n' +
+'  "gilTarget": "ALL",\n' +
+'  "merchantAvailable": false,\n' +
+'  "newCompanion": null\n' +
 '}'
                     }]
                 },
@@ -1381,7 +1543,9 @@
                         completedTask: false, 
                         levelUpHero: "NONE",
                         gilAward: 0,
-                        gilTarget: "NONE"
+                        gilTarget: "NONE",
+                        merchantAvailable: false,
+                        newCompanion: null
                     }) }]
                 },
                 {
@@ -1396,13 +1560,15 @@
 
         async function triggerGeminiResolution(heroName, action, naturalRoll, total, sides, stat) {
             var activeHero = party.find(function(p) { return p.name.toLowerCase() === heroName.toLowerCase(); });
-            var pronounNote = activeHero && activeHero.gender ? ' [Pronouns: ' + activeHero.gender + ']' : '';
+            var pronounNote = activeHero && activeHero.gender ? ' [Pronouns: ' + activeHero.gender + ', Race: ' + (activeHero.race || 'Human') + ']' : '';
+            var compList = partyCompanions.map(function(c) { return c.name + " (" + c.type + ")"; }).join(", ");
+            var compContext = compList ? " [Active Companions: " + compList + "]" : "";
 
             gameHistory.push({
                 role: "user",
                 parts: [{
-                    text: '[Turn Check] ' + heroName + pronounNote + ' rolled a natural ' + naturalRoll + ' on a d' + sides + ' with ' + stat + ' modifier (Total: ' + total + ') attempting: "' + action + '".\n' +
-'Describe the outcome respecting ' + heroName + '\'s pronouns. If they find loot, defeat an enemy, or open a chest, include a "gilAward" (> 0). Designate the next hero to act and offer action choices specifying both dieType (4, 6, 8, 10, 12, 20, 100) and stat (STR, DEX, CON, INT, WIS, CHA).'
+                    text: '[Turn Check] ' + heroName + pronounNote + compContext + ' rolled a natural ' + naturalRoll + ' on a d' + sides + ' with ' + stat + ' modifier (Total: ' + total + ') attempting: "' + action + '".\n' +
+'Describe the outcome respecting ' + heroName + '\'s pronouns and race. If they find an ally/pet, award "newCompanion". If a trader is discovered, set "merchantAvailable": true. Include gilAward if loot is found. Designate the next hero and provide dieType & stat choices.'
                 }]
             });
             fetchAndBroadcastGemini();
@@ -1437,7 +1603,6 @@
 
                 gameHistory.push({ role: "model", parts: [{ text: rawText }] });
 
-                // Gil Award Resolution
                 if (parsed.gilAward && parsed.gilAward > 0) {
                     broadcastToAll({
                         type: 'AWARD_GIL',
@@ -1446,7 +1611,14 @@
                     });
                 }
 
-                // Level Up Resolution
+                if (parsed.newCompanion && parsed.newCompanion.name) {
+                    partyCompanions.push(parsed.newCompanion);
+                    broadcastToAll({
+                        type: 'ADD_COMPANION',
+                        companion: parsed.newCompanion
+                    });
+                }
+
                 if (parsed.completedTask && parsed.levelUpHero && parsed.levelUpHero !== 'NONE') {
                     broadcastToAll({
                         type: 'LEVEL_UP',
@@ -1454,7 +1626,6 @@
                     });
                 }
 
-                // Format choices for schema guarantees
                 var formattedChoices = (parsed.choices || []).map(function(c) {
                     if (typeof c === 'string') return { text: c, dieType: 20, stat: "STR" };
                     return {
@@ -1468,7 +1639,8 @@
                     type: 'SCENE_UPDATE',
                     narrative: parsed.narrative,
                     targetHero: parsed.targetHero || 'ALL',
-                    choices: formattedChoices
+                    choices: formattedChoices,
+                    merchantAvailable: !!parsed.merchantAvailable
                 });
 
                 log('DM query complete.');
