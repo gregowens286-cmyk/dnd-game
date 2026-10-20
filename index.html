@@ -84,7 +84,8 @@
             font-size: 1rem;
         }
 
-        .avatar-creator {
+        /* Pixel Sprite Builder Container */
+        .sprite-builder {
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -95,14 +96,15 @@
             margin-bottom: 12px;
         }
 
-        .avatar-preview {
-            width: 86px;
-            height: 86px;
-            border-radius: 50%;
+        .sprite-canvas-preview {
+            width: 96px;
+            height: 96px;
+            border-radius: 8px;
             border: 3px solid var(--active-gold);
-            background: #1a1a1a;
+            background: #151515;
             box-shadow: 0 4px 10px rgba(0,0,0,0.5);
             margin-bottom: 10px;
+            image-rendering: pixelated;
         }
 
         .customizer-grid {
@@ -118,12 +120,13 @@
         }
 
         .avatar-hud {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
+            width: 38px;
+            height: 38px;
+            border-radius: 6px;
             border: 2px solid var(--active-gold);
-            background: #1a1a1a;
+            background: #151515;
             flex-shrink: 0;
+            image-rendering: pixelated;
         }
 
         .player-info-hud {
@@ -407,39 +410,43 @@
                 <div id="save-info" style="font-size: 0.8rem; color: #aaa; margin-top: 4px;"></div>
             </div>
 
-            <!-- Host Avatar Builder -->
-            <div class="avatar-creator">
-                <img id="host-avatar-img" class="avatar-preview" src="">
+            <!-- Host Built-in Pixel Sprite Builder -->
+            <div class="sprite-builder">
+                <canvas id="host-sprite-canvas" class="sprite-canvas-preview" width="32" height="32"></canvas>
                 <div class="customizer-grid">
                     <div>
                         <label style="font-size:0.75rem; color:#aaa;">Skin Tone</label>
-                        <select id="host-avatar-skin" onchange="updateCustomAvatar('host')">
-                            <option value="f2d3b1">Fair</option>
-                            <option value="d08b5b" selected>Warm / Tan</option>
-                            <option value="ae5d29">Deep Caramel</option>
-                            <option value="614335">Dark Espresso</option>
-                            <option value="92d050">Orcish Olive</option>
+                        <select id="host-char-skin" onchange="renderCustomCharacter('host')">
+                            <option value="#f8d9b6">Fair Ivory</option>
+                            <option value="#d2996d" selected>Warm Tan</option>
+                            <option value="#8d5524">Deep Bronze</option>
+                            <option value="#4a2c13">Dark Obsidian</option>
+                            <option value="#76b852">Orcish Olive</option>
+                            <option value="#9b59b6">Mystic Violet</option>
                         </select>
                     </div>
                     <div>
                         <label style="font-size:0.75rem; color:#aaa;">Hair Style</label>
-                        <select id="host-avatar-hair" onchange="updateCustomAvatar('host')"></select>
+                        <select id="host-char-hair" onchange="renderCustomCharacter('host')"></select>
                     </div>
                     <div>
                         <label style="font-size:0.75rem; color:#aaa;">Hair Color</label>
-                        <select id="host-avatar-haircolor" onchange="updateCustomAvatar('host')">
-                            <option value="2c1b18" selected>Black / Deep Brown</option>
-                            <option value="85461e">Auburn / Chestnut</option>
-                            <option value="e5d7a3">Golden Blonde</option>
-                            <option value="b91c1c">Crimson Red</option>
-                            <option value="6b21a8">Mystic Purple</option>
+                        <select id="host-char-haircolor" onchange="renderCustomCharacter('host')">
+                            <option value="#1c1613" selected>Midnight Black</option>
+                            <option value="#6b3e1e">Chestnut Brown</option>
+                            <option value="#e6c26b">Radiant Gold</option>
+                            <option value="#a8281e">Crimson Flame</option>
+                            <option value="#95a5a6">Silver Ash</option>
+                            <option value="#8e44ad">Aether Purple</option>
                         </select>
                     </div>
                     <div>
-                        <label style="font-size:0.75rem; color:#aaa;">Accessory</label>
-                        <select id="host-avatar-glasses" onchange="updateCustomAvatar('host')">
-                            <option value="0" selected>None</option>
-                            <option value="100">Explorer Specs</option>
+                        <label style="font-size:0.75rem; color:#aaa;">Armor / Garb</label>
+                        <select id="host-char-gear" onchange="renderCustomCharacter('host')">
+                            <option value="iron">Iron Plate</option>
+                            <option value="leather" selected>Leather Tunic</option>
+                            <option value="cloth">Arcane Robes</option>
+                            <option value="gold">Guild Gilded</option>
                         </select>
                     </div>
                 </div>
@@ -502,39 +509,43 @@
             <h3>Join Existing Adventure</h3>
             <p style="font-size: 0.85rem; color:#aaa;">Connect your phone or tablet to play your hero.</p>
 
-            <!-- Player Avatar Builder -->
-            <div class="avatar-creator">
-                <img id="player-avatar-img" class="avatar-preview" src="">
+            <!-- Player Built-in Pixel Sprite Builder -->
+            <div class="sprite-builder">
+                <canvas id="player-sprite-canvas" class="sprite-canvas-preview" width="32" height="32"></canvas>
                 <div class="customizer-grid">
                     <div>
                         <label style="font-size:0.75rem; color:#aaa;">Skin Tone</label>
-                        <select id="player-avatar-skin" onchange="updateCustomAvatar('player')">
-                            <option value="f2d3b1" selected>Fair</option>
-                            <option value="d08b5b">Warm / Tan</option>
-                            <option value="ae5d29">Deep Caramel</option>
-                            <option value="614335">Dark Espresso</option>
-                            <option value="92d050">Orcish Olive</option>
+                        <select id="player-char-skin" onchange="renderCustomCharacter('player')">
+                            <option value="#f8d9b6" selected>Fair Ivory</option>
+                            <option value="#d2996d">Warm Tan</option>
+                            <option value="#8d5524">Deep Bronze</option>
+                            <option value="#4a2c13">Dark Obsidian</option>
+                            <option value="#76b852">Orcish Olive</option>
+                            <option value="#9b59b6">Mystic Violet</option>
                         </select>
                     </div>
                     <div>
                         <label style="font-size:0.75rem; color:#aaa;">Hair Style</label>
-                        <select id="player-avatar-hair" onchange="updateCustomAvatar('player')"></select>
+                        <select id="player-char-hair" onchange="renderCustomCharacter('player')"></select>
                     </div>
                     <div>
                         <label style="font-size:0.75rem; color:#aaa;">Hair Color</label>
-                        <select id="player-avatar-haircolor" onchange="updateCustomAvatar('player')">
-                            <option value="2c1b18">Black / Deep Brown</option>
-                            <option value="85461e">Auburn / Chestnut</option>
-                            <option value="e5d7a3" selected>Golden Blonde</option>
-                            <option value="b91c1c">Crimson Red</option>
-                            <option value="6b21a8">Mystic Purple</option>
+                        <select id="player-char-haircolor" onchange="renderCustomCharacter('player')">
+                            <option value="#1c1613">Midnight Black</option>
+                            <option value="#6b3e1e">Chestnut Brown</option>
+                            <option value="#e6c26b" selected>Radiant Gold</option>
+                            <option value="#a8281e">Crimson Flame</option>
+                            <option value="#95a5a6">Silver Ash</option>
+                            <option value="#8e44ad">Aether Purple</option>
                         </select>
                     </div>
                     <div>
-                        <label style="font-size:0.75rem; color:#aaa;">Accessory</label>
-                        <select id="player-avatar-glasses" onchange="updateCustomAvatar('player')">
-                            <option value="0" selected>None</option>
-                            <option value="100">Explorer Specs</option>
+                        <label style="font-size:0.75rem; color:#aaa;">Armor / Garb</label>
+                        <select id="player-char-gear" onchange="renderCustomCharacter('player')">
+                            <option value="iron">Iron Plate</option>
+                            <option value="leather" selected>Leather Tunic</option>
+                            <option value="cloth">Arcane Robes</option>
+                            <option value="gold">Guild Gilded</option>
                         </select>
                     </div>
                 </div>
@@ -681,7 +692,6 @@
         var gameHistory = [];
         var activeGenre = "Medieval Fantasy";
 
-        // Store Inventory
         var STORE_ITEMS = [
             { id: "potion_hp", name: "Health Elixir", cost: 25, hpBuff: 10, acBuff: 0, statBuffKey: null, statBuffVal: 0, desc: "+10 Max & Current HP" },
             { id: "iron_shield", name: "Reinforced Shield", cost: 50, hpBuff: 0, acBuff: 2, statBuffKey: null, statBuffVal: 0, desc: "+2 Armor Class (AC)" },
@@ -691,28 +701,6 @@
             { id: "amulet_wisdom", name: "Radiant Talisman", cost: 75, hpBuff: 0, acBuff: 0, statBuffKey: "WIS", statBuffVal: 1, desc: "+1 to Wisdom (WIS) Checks" },
             { id: "dragon_mantle", name: "Titan's Plate", cost: 130, hpBuff: 15, acBuff: 3, statBuffKey: "CON", statBuffVal: 1, desc: "+15 HP, +3 Armor, +1 CON" }
         ];
-
-        // Gender & Role Customization Tables
-        var HAIR_OPTIONS = {
-            female: [
-                { value: "long01", label: "Long Flowing" },
-                { value: "long03", label: "Braided Locks" },
-                { value: "curly01", label: "Curly Ringlets" },
-                { value: "short01", label: "Pixie Cut" }
-            ],
-            male: [
-                { value: "short04", label: "Modern Fade" },
-                { value: "short01", label: "Short Crop" },
-                { value: "long03", label: "Warrior Braids" },
-                { value: "curly01", label: "Short Curly" }
-            ],
-            neutral: [
-                { value: "short04", label: "Textured Fade" },
-                { value: "long01", label: "Shoulder Locks" },
-                { value: "long03", label: "Sideswept Braids" },
-                { value: "short01", label: "Messy Tumble" }
-            ]
-        };
 
         var ROLE_SPECIALIZATIONS = {
             "Warrior": [
@@ -734,6 +722,27 @@
             "Cleric": [
                 { name: "War Priest", desc: "+1 AC, armored crusader", acBuff: 1, hpBuff: 0 },
                 { name: "Radiant Healer", desc: "+3 HP, empowered restoration", acBuff: 0, hpBuff: 3 }
+            ]
+        };
+
+        var GENDER_HAIR_STYLES = {
+            female: [
+                { id: "braids", name: "Twin Braids" },
+                { id: "long", name: "Long Flowing" },
+                { id: "bun", name: "Warrior Topknot" },
+                { id: "short", name: "Short Crop" }
+            ],
+            male: [
+                { id: "short", name: "Warrior Crop" },
+                { id: "sidecut", name: "Tactical Sidecut" },
+                { id: "wild", name: "Wild Mane" },
+                { id: "bald", name: "Shaved / Bald" }
+            ],
+            neutral: [
+                { id: "long", name: "Shoulder Locks" },
+                { id: "sidecut", name: "Sideswept Fringe" },
+                { id: "bun", name: "High Bun" },
+                { id: "short", name: "Tumbled Crop" }
             ]
         };
 
@@ -777,7 +786,7 @@
             }
         }
 
-        // --- STATS COMPUTATION: COMBINING CLASS AND RACE ---
+        // --- CORE STATS COMPUTATION ---
         function calculateHeroStats(role, race) {
             var base = {
                 hp: 20, maxHp: 20, ac: 13,
@@ -838,7 +847,6 @@
             return base;
         }
 
-        // --- AVATAR & CUSTOMIZATION BUILDER ---
         function getGenderKey(genderStr) {
             if (genderStr.indexOf("female") !== -1) return "female";
             if (genderStr.indexOf("male") !== -1) return "male";
@@ -854,26 +862,163 @@
             if (roleStr === "Warrior") {
                 title = g === "female" ? "Shieldmaiden Vanguard" : (g === "male" ? "Ironclad Knight" : "Vanguard Sentinel");
                 kitItem = "Tempered Heirloom Sigil";
-                kitDesc = "Sturdy chainmail mantle & a polished heraldry brooch.";
+                kitDesc = "Sturdy chainmail mantle & a polished vanguard heraldry brooch.";
             } else if (roleStr === "Barbarian") {
                 title = g === "female" ? "Dread Valkyrie" : (g === "male" ? "Chieftain Berserker" : "Primal Reaver");
                 kitItem = "Totem Bone Charm";
-                kitDesc = "Runed leather war-harness and etched bone fetish.";
+                kitDesc = "Runed leather war-harness and etched bone war-fetish.";
             } else if (roleStr === "Rogue") {
                 title = g === "female" ? "Whispering Shade" : (g === "male" ? "Shadow Operative" : "Veiled Phantom");
                 kitItem = "Smokepowder Vial";
-                kitDesc = "Soft velvet cowl, silent felted boots, and lockpicks.";
+                kitDesc = "Soft velvet cowl, silent felted boots, and concealed lockpicks.";
             } else if (roleStr === "Mage") {
                 title = g === "female" ? "High Sorceress" : (g === "male" ? "Archmage Savant" : "Aether Scholar");
                 kitItem = "Spell-Focus Crystal";
-                kitDesc = "Stitched rune-robes, pocket star-chart, and glow-quartz.";
+                kitDesc = "Stitched rune-robes, pocket star-chart, and a glow-quartz crystal.";
             } else if (roleStr === "Cleric") {
                 title = g === "female" ? "Matron High Priestess" : (g === "male" ? "Templar Patriarch" : "Divine Justiciar");
                 kitItem = "Blessed Reliquary";
-                kitDesc = "Sanctified tabard, silvered prayer ring, and holy balm.";
+                kitDesc = "Sanctified tabard, silvered prayer ring, and holy soothing balm.";
             }
 
             return { title: title, item: kitItem, desc: kitDesc };
+        }
+
+        // --- PROCEDURAL 2D PIXEL SPRITE RENDERER ---
+        function renderCustomCharacter(target) {
+            var canvas = document.getElementById(target + '-sprite-canvas');
+            if (!canvas) return "";
+            var ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, 32, 32);
+
+            var skin = document.getElementById(target + '-char-skin').value;
+            var hairEl = document.getElementById(target + '-char-hair');
+            var hairStyle = hairEl && hairEl.value ? hairEl.value : 'short';
+            var hairColor = document.getElementById(target + '-char-haircolor').value;
+            var gear = document.getElementById(target + '-char-gear').value;
+            var gender = document.getElementById(target + '-hero-gender').value;
+            var role = document.getElementById(target + '-hero-role').value;
+            var gKey = getGenderKey(gender);
+
+            // Palette setup
+            var gearColors = {
+                iron: { body: "#7f8c8d", trim: "#bdc3c7", accent: "#34495e" },
+                leather: { body: "#8e5d34", trim: "#c49a6c", accent: "#4a2c13" },
+                cloth: { body: "#2980b9", trim: "#f1c40f", accent: "#1a5276" },
+                gold: { body: "#d4ac0d", trim: "#f7dc6f", accent: "#b7950b" }
+            }[gear] || { body: "#7f8c8d", trim: "#bdc3c7", accent: "#34495e" };
+
+            // 1. Shadow / Base outline
+            ctx.fillStyle = "rgba(0,0,0,0.35)";
+            ctx.fillRect(8, 28, 16, 3);
+
+            // 2. Legs / Boots
+            ctx.fillStyle = "#2c3e50";
+            ctx.fillRect(11, 23, 4, 6);
+            ctx.fillRect(17, 23, 4, 6);
+            ctx.fillStyle = "#111";
+            ctx.fillRect(10, 27, 5, 3);
+            ctx.fillRect(17, 27, 5, 3);
+
+            // 3. Torso / Armor
+            ctx.fillStyle = gearColors.body;
+            ctx.fillRect(10, 14, 12, 10);
+            ctx.fillStyle = gearColors.trim;
+            ctx.fillRect(11, 14, 10, 2);
+            ctx.fillRect(15, 16, 2, 8); // Trim center line
+
+            // Subclass / Armor Accents
+            ctx.fillStyle = gearColors.accent;
+            ctx.fillRect(8, 14, 3, 4); // Left shoulder pauldrons
+            ctx.fillRect(21, 14, 3, 4); // Right shoulder pauldrons
+
+            // 4. Arms & Hands
+            ctx.fillStyle = gearColors.body;
+            ctx.fillRect(8, 18, 3, 5);
+            ctx.fillRect(21, 18, 3, 5);
+            ctx.fillStyle = skin;
+            ctx.fillRect(8, 23, 3, 3);
+            ctx.fillRect(21, 23, 3, 3);
+
+            // 5. Head & Neck
+            ctx.fillStyle = skin;
+            ctx.fillRect(14, 12, 4, 2); // Neck
+            ctx.fillRect(11, 6, 10, 8); // Head
+
+            // 6. Eyes & Expression
+            ctx.fillStyle = "#111";
+            ctx.fillRect(13, 9, 2, 2);
+            ctx.fillRect(17, 9, 2, 2);
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(14, 9, 1, 1);
+            ctx.fillRect(18, 9, 1, 1);
+
+            // 7. Hair Layer
+            ctx.fillStyle = hairColor;
+            if (hairStyle === "short") {
+                ctx.fillRect(11, 5, 10, 3);
+                ctx.fillRect(10, 7, 2, 4);
+                ctx.fillRect(20, 7, 2, 2);
+            } else if (hairStyle === "long") {
+                ctx.fillRect(11, 5, 10, 3);
+                ctx.fillRect(9, 7, 3, 10);
+                ctx.fillRect(20, 7, 3, 10);
+            } else if (hairStyle === "braids") {
+                ctx.fillRect(11, 5, 10, 3);
+                ctx.fillRect(9, 7, 2, 12);
+                ctx.fillRect(21, 7, 2, 12);
+                ctx.fillStyle = gearColors.trim;
+                ctx.fillRect(9, 18, 2, 1);
+                ctx.fillRect(21, 18, 2, 1);
+            } else if (hairStyle === "bun") {
+                ctx.fillRect(11, 5, 10, 3);
+                ctx.fillRect(14, 2, 4, 3); // Topknot
+                ctx.fillRect(10, 7, 2, 4);
+                ctx.fillRect(20, 7, 2, 4);
+            } else if (hairStyle === "sidecut") {
+                ctx.fillRect(11, 5, 10, 3);
+                ctx.fillRect(9, 6, 4, 8);
+                ctx.fillRect(19, 7, 2, 2);
+            } else if (hairStyle === "wild") {
+                ctx.fillRect(10, 4, 12, 4);
+                ctx.fillRect(8, 7, 3, 8);
+                ctx.fillRect(21, 7, 3, 8);
+            }
+
+            // 8. Role-based Weapon / Relic Sprite
+            if (role === "Warrior" || role === "Barbarian") {
+                // Broadsword in right hand
+                ctx.fillStyle = "#95a5a6";
+                ctx.fillRect(24, 8, 2, 14);
+                ctx.fillStyle = "#f1c40f";
+                ctx.fillRect(22, 20, 6, 2); // Crossguard
+                ctx.fillStyle = "#7f8c8d";
+                ctx.fillRect(24, 22, 2, 3); // Hilt
+            } else if (role === "Rogue") {
+                // Dual daggers
+                ctx.fillStyle = "#bdc3c7";
+                ctx.fillRect(6, 18, 2, 7);
+                ctx.fillRect(24, 18, 2, 7);
+                ctx.fillStyle = "#e74c3c";
+                ctx.fillRect(6, 20, 2, 1);
+                ctx.fillRect(24, 20, 2, 1);
+            } else if (role === "Mage") {
+                // Arcane Staff
+                ctx.fillStyle = "#8e5d34";
+                ctx.fillRect(24, 6, 2, 20);
+                ctx.fillStyle = "#3498db";
+                ctx.fillRect(23, 4, 4, 4); // Crystal Orb
+                ctx.fillStyle = "#ecf0f1";
+                ctx.fillRect(24, 5, 2, 2); // Core shine
+            } else if (role === "Cleric") {
+                // Scepter & Crest
+                ctx.fillStyle = "#f1c40f";
+                ctx.fillRect(24, 8, 2, 16);
+                ctx.fillRect(22, 10, 6, 2); // Cross
+                ctx.fillRect(23, 6, 4, 4);
+            }
+
+            return canvas.toDataURL("image/png");
         }
 
         function onGenderOrRoleChanged(target) {
@@ -881,23 +1026,24 @@
             var role = document.getElementById(target + '-hero-role').value;
             var gKey = getGenderKey(gender);
 
-            var hairSelect = document.getElementById(target + '-avatar-hair');
+            // 1. Populate Gender-tailored hair styles
+            var hairSelect = document.getElementById(target + '-char-hair');
             var previousHairVal = hairSelect.value;
             hairSelect.innerHTML = '';
-            var options = HAIR_OPTIONS[gKey] || HAIR_OPTIONS.neutral;
-            options.forEach(function(opt) {
-                var el = document.createElement('option');
-                el.value = opt.value;
-                el.innerText = opt.label;
-                hairSelect.appendChild(el);
+            var styles = GENDER_HAIR_STYLES[gKey] || GENDER_HAIR_STYLES.neutral;
+            styles.forEach(function(s) {
+                var opt = document.createElement('option');
+                opt.value = s.id;
+                opt.innerText = s.name;
+                hairSelect.appendChild(opt);
             });
-
-            if (options.some(function(o) { return o.value === previousHairVal; })) {
+            if (styles.some(function(s) { return s.id === previousHairVal; })) {
                 hairSelect.value = previousHairVal;
             } else {
                 hairSelect.selectedIndex = 0;
             }
 
+            // 2. Populate Specialization Subclasses
             var specSelect = document.getElementById(target + '-hero-spec');
             specSelect.innerHTML = '';
             var specs = ROLE_SPECIALIZATIONS[role] || [];
@@ -908,32 +1054,12 @@
                 specSelect.appendChild(opt);
             });
 
+            // 3. Update preview of tailored starter title & kit
             var kit = getTailoredKitAndTitle(gender, role);
             var kitBox = document.getElementById(target + '-kit-preview');
             kitBox.innerHTML = '<b>Title:</b> ' + kit.title + '<br><b>Gear:</b> ' + kit.item + '<br><span style="color:#aaa; font-size:0.75rem;">' + kit.desc + '</span>';
 
-            updateCustomAvatar(target);
-        }
-
-        function buildAvatarUrl(skin, hair, hairColor, glasses) {
-            return 'https://api.dicebear.com/9.x/adventurer/svg?' +
-                'skinColor=' + skin +
-                '&hair=' + hair +
-                '&hairColor=' + hairColor +
-                '&glassesProbability=' + glasses +
-                '&featuresProbability=0';
-        }
-
-        function updateCustomAvatar(target) {
-            var skin = document.getElementById(target + '-avatar-skin').value;
-            var hairEl = document.getElementById(target + '-avatar-hair');
-            var hair = hairEl && hairEl.value ? hairEl.value : 'short01';
-            var hairColor = document.getElementById(target + '-avatar-haircolor').value;
-            var glasses = document.getElementById(target + '-avatar-glasses').value;
-
-            var url = buildAvatarUrl(skin, hair, hairColor, glasses);
-            document.getElementById(target + '-avatar-img').src = url;
-            return url;
+            renderCustomCharacter(target);
         }
 
         // --- NARRATION ---
@@ -1092,7 +1218,6 @@
             }
         }
 
-        // --- RESTING / SHOP ENGINE ---
         function triggerHavenRest() {
             if (!confirm("Rest at a Haven / Safehouse? This restores all heroes' HP.")) return;
             
@@ -1198,7 +1323,7 @@
                 var hostRace = document.getElementById('host-hero-race').value;
                 var hostRole = document.getElementById('host-hero-role').value;
                 var hostSpec = document.getElementById('host-hero-spec').value;
-                var hostAvatar = updateCustomAvatar('host');
+                var hostAvatar = renderCustomCharacter('host');
                 var hostKit = getTailoredKitAndTitle(hostGender, hostRole);
 
                 var calculated = calculateHeroStats(hostRole, hostRace);
@@ -1256,7 +1381,7 @@
             if (!myHero.race) myHero.race = "Human";
             if (!myHero.gil) myHero.gil = 50;
             if (!myHero.inventory) myHero.inventory = [];
-            if (!myHero.avatar) myHero.avatar = updateCustomAvatar('host');
+            if (!myHero.avatar) myHero.avatar = renderCustomCharacter('host');
             if (!myHero.stats) myHero.stats = calculateHeroStats(myHero.role, myHero.race).stats;
 
             startHostSession(true, parsed.narrative);
@@ -1304,7 +1429,7 @@
                 var raceInput = document.getElementById('player-hero-race').value;
                 var roleInput = document.getElementById('player-hero-role').value;
                 var playerSpec = document.getElementById('player-hero-spec').value;
-                var playerAvatar = updateCustomAvatar('player');
+                var playerAvatar = renderCustomCharacter('player');
                 var playerKit = getTailoredKitAndTitle(genderInput, roleInput);
 
                 if (codeInput.length !== 4) {
@@ -1381,7 +1506,7 @@
                 var heroSpecLabel = myHero.specialization ? ' • ' + myHero.specialization : '';
                 roleEl.innerHTML = 
                     '<div class="player-info-hud">' +
-                        '<img src="' + (myHero.avatar || updateCustomAvatar('player')) + '" class="avatar-hud">' +
+                        '<img src="' + (myHero.avatar || renderCustomCharacter('player')) + '" class="avatar-hud">' +
                         '<span class="badge" title="' + (myHero.title || '') + '">' + myHero.name + ' (' + (myHero.race || 'Human') + ' ' + myHero.role + heroSpecLabel + ')' + (isHost ? ' [Host]' : '') + '</span>' +
                     '</div>';
             }
