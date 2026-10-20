@@ -39,8 +39,6 @@
             padding: 8px;
             max-width: 800px;
             margin: 0 auto;
-            height: 100%;
-            height: 100dvh;
             box-sizing: border-box;
         }
 
@@ -61,7 +59,6 @@
             min-height: 0;
             overflow: hidden;
         }
-
 
         .card {
             background-color: var(--card-bg);
@@ -87,7 +84,6 @@
             font-size: 1rem;
         }
 
-        /* Avatar Customization Styling */
         .avatar-creator {
             display: flex;
             flex-direction: column;
@@ -136,7 +132,6 @@
             gap: 8px;
         }
 
-        /* Narrative Box: Flexible Accordion */
         #narrative-box {
             flex: 1 1 auto;
             min-height: 80px;
@@ -151,7 +146,6 @@
             -webkit-overflow-scrolling: touch;
         }
 
-        /* Action Buttons Area */
         #dynamic-choices {
             display: flex;
             flex-direction: column;
@@ -169,7 +163,6 @@
             margin-bottom: 0;
         }
 
-        /* Companion Banner */
         #companion-banner {
             display: none;
             background: #1e3734;
@@ -183,7 +176,6 @@
             gap: 8px;
         }
 
-        /* Primary Stat Banner */
         .primary-stat-banner {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -199,7 +191,6 @@
         .stat-box { font-size: 0.75rem; }
         .stat-val { font-size: 1.1rem; font-weight: bold; color: var(--active-gold); }
 
-        /* Core 6 Ability Scores Bar */
         .abilities-bar {
             display: grid;
             grid-template-columns: repeat(6, 1fr);
@@ -262,7 +253,6 @@
         .btn-purple { background-color: var(--shop-purple); }
         .btn-teal { background-color: var(--companion-teal); }
 
-        /* 7 Polyhedral Dice Bar */
         #dice-container {
             display: flex;
             justify-content: center;
@@ -345,7 +335,6 @@
             text-align: center;
         }
 
-        /* Compact Scaling for Narrow / Short Phones */
         @media (max-height: 720px), (max-width: 380px) {
             body { padding: 4px; }
             .primary-stat-banner { padding: 4px; gap: 4px; margin-bottom: 4px; }
@@ -357,7 +346,6 @@
             .dice-btn { height: 36px; font-size: 0.75rem; }
         }
 
-        /* Shop Modal */
         #shop-modal {
             display: none;
             position: fixed;
@@ -435,13 +423,7 @@
                     </div>
                     <div>
                         <label style="font-size:0.75rem; color:#aaa;">Hair Style</label>
-                        <select id="host-avatar-hair" onchange="updateCustomAvatar('host')">
-                            <option value="short01">Short Crop</option>
-                            <option value="short04" selected>Modern Fade</option>
-                            <option value="long01">Long Flowing</option>
-                            <option value="long03">Braided Locks</option>
-                            <option value="curly01">Curly Afro</option>
-                        </select>
+                        <select id="host-avatar-hair" onchange="updateCustomAvatar('host')"></select>
                     </div>
                     <div>
                         <label style="font-size:0.75rem; color:#aaa;">Hair Color</label>
@@ -478,7 +460,7 @@
             </div>
             <div class="input-group">
                 <label>Gender / Pronouns</label>
-                <select id="host-hero-gender">
+                <select id="host-hero-gender" onchange="onGenderOrRoleChanged('host')">
                     <option value="female (she/her)">Female (She/Her)</option>
                     <option value="male (he/him)">Male (He/Him)</option>
                     <option value="non-binary (they/them)">Non-Binary (They/Them)</option>
@@ -497,13 +479,21 @@
             </div>
             <div class="input-group">
                 <label>Class / Role</label>
-                <select id="host-hero-role">
+                <select id="host-hero-role" onchange="onGenderOrRoleChanged('host')">
                     <option value="Warrior">Warrior / Vanguard (High HP, Heavy AC)</option>
                     <option value="Barbarian">Barbarian / Berserker (Max HP, Heavy STR)</option>
                     <option value="Rogue">Rogue / Infiltrator (High DEX, Stealth)</option>
                     <option value="Mage">Mage / Specialist (High INT, Arcana)</option>
                     <option value="Cleric">Cleric / Support (Balanced Defense, High WIS)</option>
                 </select>
+            </div>
+            <div class="input-group">
+                <label>Specialization / Subclass</label>
+                <select id="host-hero-spec"></select>
+            </div>
+            <div class="input-group">
+                <label>Tailored Starting Kit & Title</label>
+                <div id="host-kit-preview" style="background:#111; border:1px solid #444; border-radius:5px; padding:8px; font-size:0.85rem; color:#f1c40f;"></div>
             </div>
             <button class="btn btn-green" onclick="setupHost()">Host New Game</button>
         </div>
@@ -528,13 +518,7 @@
                     </div>
                     <div>
                         <label style="font-size:0.75rem; color:#aaa;">Hair Style</label>
-                        <select id="player-avatar-hair" onchange="updateCustomAvatar('player')">
-                            <option value="short01">Short Crop</option>
-                            <option value="short04">Modern Fade</option>
-                            <option value="long01" selected>Long Flowing</option>
-                            <option value="long03">Braided Locks</option>
-                            <option value="curly01">Curly Afro</option>
-                        </select>
+                        <select id="player-avatar-hair" onchange="updateCustomAvatar('player')"></select>
                     </div>
                     <div>
                         <label style="font-size:0.75rem; color:#aaa;">Hair Color</label>
@@ -566,7 +550,7 @@
             </div>
             <div class="input-group">
                 <label>Gender / Pronouns</label>
-                <select id="player-hero-gender">
+                <select id="player-hero-gender" onchange="onGenderOrRoleChanged('player')">
                     <option value="female (she/her)">Female (She/Her)</option>
                     <option value="male (he/him)">Male (He/Him)</option>
                     <option value="non-binary (they/them)">Non-Binary (They/Them)</option>
@@ -585,13 +569,21 @@
             </div>
             <div class="input-group">
                 <label>Class / Role</label>
-                <select id="player-hero-role">
+                <select id="player-hero-role" onchange="onGenderOrRoleChanged('player')">
                     <option value="Warrior">Warrior / Vanguard (High HP, Heavy AC)</option>
                     <option value="Barbarian">Barbarian / Berserker (Max HP, Heavy STR)</option>
                     <option value="Rogue">Rogue / Infiltrator (High DEX, Stealth)</option>
                     <option value="Mage">Mage / Specialist (High INT, Arcana)</option>
                     <option value="Cleric">Cleric / Support (Balanced Defense, High WIS)</option>
                 </select>
+            </div>
+            <div class="input-group">
+                <label>Specialization / Subclass</label>
+                <select id="player-hero-spec"></select>
+            </div>
+            <div class="input-group">
+                <label>Tailored Starting Kit & Title</label>
+                <div id="player-kit-preview" style="background:#111; border:1px solid #444; border-radius:5px; padding:8px; font-size:0.85rem; color:#f1c40f;"></div>
             </div>
             <button class="btn" onclick="joinAsPlayer()">Join Realm</button>
         </div>
@@ -700,6 +692,51 @@
             { id: "dragon_mantle", name: "Titan's Plate", cost: 130, hpBuff: 15, acBuff: 3, statBuffKey: "CON", statBuffVal: 1, desc: "+15 HP, +3 Armor, +1 CON" }
         ];
 
+        // Gender & Role Customization Tables
+        var HAIR_OPTIONS = {
+            female: [
+                { value: "long01", label: "Long Flowing" },
+                { value: "long03", label: "Braided Locks" },
+                { value: "curly01", label: "Curly Ringlets" },
+                { value: "short01", label: "Pixie Cut" }
+            ],
+            male: [
+                { value: "short04", label: "Modern Fade" },
+                { value: "short01", label: "Short Crop" },
+                { value: "long03", label: "Warrior Braids" },
+                { value: "curly01", label: "Short Curly" }
+            ],
+            neutral: [
+                { value: "short04", label: "Textured Fade" },
+                { value: "long01", label: "Shoulder Locks" },
+                { value: "long03", label: "Sideswept Braids" },
+                { value: "short01", label: "Messy Tumble" }
+            ]
+        };
+
+        var ROLE_SPECIALIZATIONS = {
+            "Warrior": [
+                { name: "Shield Guardian", desc: "+1 AC, defensive stance", acBuff: 1, hpBuff: 0 },
+                { name: "Battlemaster", desc: "+2 HP, combat commander", acBuff: 0, hpBuff: 2 }
+            ],
+            "Barbarian": [
+                { name: "Juggernaut", desc: "+4 Max HP, unstoppable rage", acBuff: 0, hpBuff: 4 },
+                { name: "Wild Hunter", desc: "+1 AC, primal reflexes", acBuff: 1, hpBuff: 0 }
+            ],
+            "Rogue": [
+                { name: "Shadow Assassin", desc: "+2 HP, deadly strikes", acBuff: 0, hpBuff: 2 },
+                { name: "Swashbuckler", desc: "+1 AC, flamboyant duelist", acBuff: 1, hpBuff: 0 }
+            ],
+            "Mage": [
+                { name: "Elementalist", desc: "+2 HP, raw evocation power", acBuff: 0, hpBuff: 2 },
+                { name: "Chronomancer", desc: "+1 AC, temporal warding", acBuff: 1, hpBuff: 0 }
+            ],
+            "Cleric": [
+                { name: "War Priest", desc: "+1 AC, armored crusader", acBuff: 1, hpBuff: 0 },
+                { name: "Radiant Healer", desc: "+3 HP, empowered restoration", acBuff: 0, hpBuff: 3 }
+            ]
+        };
+
         var synth = window.speechSynthesis;
         var narrationEnabled = true;
 
@@ -710,8 +747,8 @@
 
         window.addEventListener('DOMContentLoaded', function() {
             if (synth) synth.getVoices();
-            updateCustomAvatar('host');
-            updateCustomAvatar('player');
+            onGenderOrRoleChanged('host');
+            onGenderOrRoleChanged('player');
             checkExistingSave();
         });
 
@@ -801,7 +838,83 @@
             return base;
         }
 
-        // --- AVATAR BUILDER ENGINE ---
+        // --- AVATAR & CUSTOMIZATION BUILDER ---
+        function getGenderKey(genderStr) {
+            if (genderStr.indexOf("female") !== -1) return "female";
+            if (genderStr.indexOf("male") !== -1) return "male";
+            return "neutral";
+        }
+
+        function getTailoredKitAndTitle(genderStr, roleStr) {
+            var g = getGenderKey(genderStr);
+            var title = "";
+            var kitItem = "";
+            var kitDesc = "";
+
+            if (roleStr === "Warrior") {
+                title = g === "female" ? "Shieldmaiden Vanguard" : (g === "male" ? "Ironclad Knight" : "Vanguard Sentinel");
+                kitItem = "Tempered Heirloom Sigil";
+                kitDesc = "Sturdy chainmail mantle & a polished heraldry brooch.";
+            } else if (roleStr === "Barbarian") {
+                title = g === "female" ? "Dread Valkyrie" : (g === "male" ? "Chieftain Berserker" : "Primal Reaver");
+                kitItem = "Totem Bone Charm";
+                kitDesc = "Runed leather war-harness and etched bone fetish.";
+            } else if (roleStr === "Rogue") {
+                title = g === "female" ? "Whispering Shade" : (g === "male" ? "Shadow Operative" : "Veiled Phantom");
+                kitItem = "Smokepowder Vial";
+                kitDesc = "Soft velvet cowl, silent felted boots, and lockpicks.";
+            } else if (roleStr === "Mage") {
+                title = g === "female" ? "High Sorceress" : (g === "male" ? "Archmage Savant" : "Aether Scholar");
+                kitItem = "Spell-Focus Crystal";
+                kitDesc = "Stitched rune-robes, pocket star-chart, and glow-quartz.";
+            } else if (roleStr === "Cleric") {
+                title = g === "female" ? "Matron High Priestess" : (g === "male" ? "Templar Patriarch" : "Divine Justiciar");
+                kitItem = "Blessed Reliquary";
+                kitDesc = "Sanctified tabard, silvered prayer ring, and holy balm.";
+            }
+
+            return { title: title, item: kitItem, desc: kitDesc };
+        }
+
+        function onGenderOrRoleChanged(target) {
+            var gender = document.getElementById(target + '-hero-gender').value;
+            var role = document.getElementById(target + '-hero-role').value;
+            var gKey = getGenderKey(gender);
+
+            var hairSelect = document.getElementById(target + '-avatar-hair');
+            var previousHairVal = hairSelect.value;
+            hairSelect.innerHTML = '';
+            var options = HAIR_OPTIONS[gKey] || HAIR_OPTIONS.neutral;
+            options.forEach(function(opt) {
+                var el = document.createElement('option');
+                el.value = opt.value;
+                el.innerText = opt.label;
+                hairSelect.appendChild(el);
+            });
+
+            if (options.some(function(o) { return o.value === previousHairVal; })) {
+                hairSelect.value = previousHairVal;
+            } else {
+                hairSelect.selectedIndex = 0;
+            }
+
+            var specSelect = document.getElementById(target + '-hero-spec');
+            specSelect.innerHTML = '';
+            var specs = ROLE_SPECIALIZATIONS[role] || [];
+            specs.forEach(function(s) {
+                var opt = document.createElement('option');
+                opt.value = s.name;
+                opt.innerText = s.name + ' (' + s.desc + ')';
+                specSelect.appendChild(opt);
+            });
+
+            var kit = getTailoredKitAndTitle(gender, role);
+            var kitBox = document.getElementById(target + '-kit-preview');
+            kitBox.innerHTML = '<b>Title:</b> ' + kit.title + '<br><b>Gear:</b> ' + kit.item + '<br><span style="color:#aaa; font-size:0.75rem;">' + kit.desc + '</span>';
+
+            updateCustomAvatar(target);
+        }
+
         function buildAvatarUrl(skin, hair, hairColor, glasses) {
             return 'https://api.dicebear.com/9.x/adventurer/svg?' +
                 'skinColor=' + skin +
@@ -813,7 +926,8 @@
 
         function updateCustomAvatar(target) {
             var skin = document.getElementById(target + '-avatar-skin').value;
-            var hair = document.getElementById(target + '-avatar-hair').value;
+            var hairEl = document.getElementById(target + '-avatar-hair');
+            var hair = hairEl && hairEl.value ? hairEl.value : 'short01';
             var hairColor = document.getElementById(target + '-avatar-haircolor').value;
             var glasses = document.getElementById(target + '-avatar-glasses').value;
 
@@ -929,7 +1043,7 @@
             });
         }
 
-        // --- RELIABLE WALKIE-TALKIE AUDIO OVER MQTT ---
+        // --- RELIABLE AUDIO RELAY OVER MQTT ---
         async function toggleMicrophone() {
             var btn = document.getElementById('mic-toggle-btn');
 
@@ -978,7 +1092,7 @@
             }
         }
 
-        // --- HAVEN / RESTING MECHANIC ---
+        // --- RESTING / SHOP ENGINE ---
         function triggerHavenRest() {
             if (!confirm("Rest at a Haven / Safehouse? This restores all heroes' HP.")) return;
             
@@ -993,13 +1107,12 @@
             if (isHost) {
                 gameHistory.push({
                     role: "user",
-                    parts: [{ text: "[Rest Phase] The party has found a safe haven (fortified hideout, warm tavern, or secure bunker) to rest. Full HP restored. Describe the refuge, show peaceful character interactions, and propose calm strategic choices before venturing back out." }]
+                    parts: [{ text: "[Rest Phase] The party has found a safe haven to rest. Full HP restored. Describe the refuge, show peaceful character interactions, and propose calm strategic choices before venturing back out." }]
                 });
                 fetchAndBroadcastGemini();
             }
         }
 
-        // --- SHOP ENGINE ---
         function openShopModal() {
             if (!myHero) return;
             document.getElementById('shop-gil-display').innerText = myHero.gil;
@@ -1084,9 +1197,18 @@
                 var hostGender = document.getElementById('host-hero-gender').value;
                 var hostRace = document.getElementById('host-hero-race').value;
                 var hostRole = document.getElementById('host-hero-role').value;
+                var hostSpec = document.getElementById('host-hero-spec').value;
                 var hostAvatar = updateCustomAvatar('host');
+                var hostKit = getTailoredKitAndTitle(hostGender, hostRole);
 
                 var calculated = calculateHeroStats(hostRole, hostRace);
+
+                var specObj = (ROLE_SPECIALIZATIONS[hostRole] || []).find(function(s) { return s.name === hostSpec; });
+                if (specObj) {
+                    calculated.ac += specObj.acBuff;
+                    calculated.hp += specObj.hpBuff;
+                    calculated.maxHp += specObj.hpBuff;
+                }
 
                 myHero = {
                     id: myClientId,
@@ -1094,6 +1216,8 @@
                     gender: hostGender,
                     race: hostRace,
                     role: hostRole,
+                    specialization: hostSpec,
+                    title: hostKit.title,
                     avatar: hostAvatar,
                     level: 1,
                     hp: calculated.hp,
@@ -1101,7 +1225,7 @@
                     ac: calculated.ac,
                     stats: calculated.stats,
                     gil: 50,
-                    inventory: [],
+                    inventory: [hostKit.item],
                     xp: 0
                 };
 
@@ -1145,9 +1269,10 @@
             renderHeroHUD();
             updateCompanionHUD();
 
+            var specLabel = myHero.specialization ? ' • ' + myHero.specialization : '';
             document.getElementById('narrative-box').innerHTML = 
                 '<b>Room Code: ' + currentRoomCode + '</b><br>' +
-                '⚔️ <b>' + myHero.name + '</b> (' + myHero.gender + ', ' + myHero.race + ' ' + myHero.role + ') is ready.<br>' +
+                '⚔️ <b>' + myHero.name + '</b> [' + (myHero.title || myHero.role) + '] (' + myHero.gender + ', ' + myHero.race + ' ' + myHero.role + specLabel + ') is ready.<br>' +
                 'Connecting to party relay...';
 
             connectBroker(function() {
@@ -1178,7 +1303,9 @@
                 var genderInput = document.getElementById('player-hero-gender').value;
                 var raceInput = document.getElementById('player-hero-race').value;
                 var roleInput = document.getElementById('player-hero-role').value;
+                var playerSpec = document.getElementById('player-hero-spec').value;
                 var playerAvatar = updateCustomAvatar('player');
+                var playerKit = getTailoredKitAndTitle(genderInput, roleInput);
 
                 if (codeInput.length !== 4) {
                     alert("Please enter a valid 4-letter room code.");
@@ -1190,12 +1317,21 @@
 
                 var calculated = calculateHeroStats(roleInput, raceInput);
 
+                var specObj = (ROLE_SPECIALIZATIONS[roleInput] || []).find(function(s) { return s.name === playerSpec; });
+                if (specObj) {
+                    calculated.ac += specObj.acBuff;
+                    calculated.hp += specObj.hpBuff;
+                    calculated.maxHp += specObj.hpBuff;
+                }
+
                 myHero = {
                     id: myClientId,
                     name: nameInput,
                     gender: genderInput,
                     race: raceInput,
                     role: roleInput,
+                    specialization: playerSpec,
+                    title: playerKit.title,
                     avatar: playerAvatar,
                     level: 1,
                     hp: calculated.hp,
@@ -1203,7 +1339,7 @@
                     ac: calculated.ac,
                     stats: calculated.stats,
                     gil: 50,
-                    inventory: [],
+                    inventory: [playerKit.item],
                     xp: 0
                 };
 
@@ -1242,10 +1378,11 @@
 
             var roleEl = document.getElementById('display-player-role');
             if (roleEl) {
+                var heroSpecLabel = myHero.specialization ? ' • ' + myHero.specialization : '';
                 roleEl.innerHTML = 
                     '<div class="player-info-hud">' +
                         '<img src="' + (myHero.avatar || updateCustomAvatar('player')) + '" class="avatar-hud">' +
-                        '<span class="badge">' + myHero.name + ' (' + (myHero.race || 'Human') + ' ' + myHero.role + ')' + (isHost ? ' [Host]' : '') + '</span>' +
+                        '<span class="badge" title="' + (myHero.title || '') + '">' + myHero.name + ' (' + (myHero.race || 'Human') + ' ' + myHero.role + heroSpecLabel + ')' + (isHost ? ' [Host]' : '') + '</span>' +
                     '</div>';
             }
         }
@@ -1278,6 +1415,8 @@
                         party[existingIdx].id = data.hero.id;
                         if (data.hero.gender) party[existingIdx].gender = data.hero.gender;
                         if (data.hero.race) party[existingIdx].race = data.hero.race;
+                        if (data.hero.specialization) party[existingIdx].specialization = data.hero.specialization;
+                        if (data.hero.title) party[existingIdx].title = data.hero.title;
                         if (data.hero.avatar) party[existingIdx].avatar = data.hero.avatar;
                         if (data.hero.stats) party[existingIdx].stats = data.hero.stats;
                         broadcastToAll({ type: 'RESTORE_HERO_STATS', hero: party[existingIdx] });
@@ -1285,9 +1424,10 @@
                         broadcastToAll({ type: 'SYSTEM_MSG', text: '⚔️ <b>' + party[existingIdx].name + '</b> has returned!' });
                     } else {
                         party.push(data.hero);
+                        var specTxt = data.hero.specialization ? ' • ' + data.hero.specialization : '';
                         broadcastToAll({ 
                             type: 'SYSTEM_MSG', 
-                            text: '⚔️ <img src="' + data.hero.avatar + '" class="avatar-hud" style="vertical-align:middle; width:24px; height:24px; margin-right:4px;"><b>' + data.hero.name + '</b> (' + data.hero.gender + ', ' + (data.hero.race || 'Human') + ' ' + data.hero.role + ') entered the realm!' 
+                            text: '⚔️ <img src="' + data.hero.avatar + '" class="avatar-hud" style="vertical-align:middle; width:24px; height:24px; margin-right:4px;"><b>' + data.hero.name + '</b> (' + data.hero.gender + ', ' + (data.hero.race || 'Human') + ' ' + data.hero.role + specTxt + ') entered the realm!' 
                         });
                         broadcastToAll({ type: 'SYNC_COMPANIONS', companions: partyCompanions });
                     }
@@ -1495,7 +1635,7 @@
             document.getElementById('dynamic-choices').innerHTML = '';
             gameHistory.push({
                 role: "user",
-                parts: [{ text: "The heroes have regrouped. Summarize current events strictly respecting stated pronouns and heritage/races, designate a hero to act, specify which polyhedral die is needed (d4, d6, d8, d10, d12, d20, d100), and link the check to a core stat (STR, DEX, CON, INT, WIS, CHA)." }]
+                parts: [{ text: "The heroes have regrouped. Summarize current events strictly respecting stated pronouns, lineage/races, and titles, designate a hero to act, specify which polyhedral die is needed (d4, d6, d8, d10, d12, d20, d100), and link the check to a core stat (STR, DEX, CON, INT, WIS, CHA)." }]
             });
             fetchAndBroadcastGemini();
         }
@@ -1507,7 +1647,10 @@
             }
             var partyRoster = party.map(function(p) { 
                 var statsSummary = p.stats ? 'STR:' + p.stats.STR + ' DEX:' + p.stats.DEX + ' INT:' + p.stats.INT + ' WIS:' + p.stats.WIS : '';
-                return p.name + ' (' + (p.gender || "she/her") + ', ' + (p.race || "Human") + ' ' + p.role + ', Level ' + p.level + ' [' + statsSummary + '])'; 
+                var specInfo = p.specialization ? ' Spec: ' + p.specialization : '';
+                var titleInfo = p.title ? ' Title: "' + p.title + '"' : '';
+                var gearInfo = (p.inventory && p.inventory.length > 0) ? ' Gear: ' + p.inventory.join(', ') : '';
+                return p.name + ' (' + (p.gender || "she/her") + ', ' + (p.race || "Human") + ' ' + p.role + specInfo + titleInfo + gearInfo + ', Level ' + p.level + ' [' + statsSummary + '])'; 
             }).join(', ');
 
             gameHistory = [
@@ -1516,7 +1659,7 @@
                     parts: [{
                         text: 'You are the DM running a ' + activeGenre + ' campaign for: ' + partyRoster + '.\n' +
 'CRITICAL RULES:\n' +
-'1. Strict Pronouns & Lineage: Always use each hero\'s designated pronouns (e.g. if Drew is listed as she/her, NEVER use he/him) and weave their race/lineage traits into the narrative.\n' +
+'1. Strict Pronouns, Lineage & Titles: Always use each hero\'s designated pronouns, incorporate their custom title, and weave their race/lineage traits into the narrative.\n' +
 '2. Core Stats & Dice: Every action in "choices" MUST indicate a die type from [4, 6, 8, 10, 12, 20, 100] AND a relevant core stat from ["STR", "DEX", "CON", "INT", "WIS", "CHA"].\n' +
 '3. Conditional Shop: Set "merchantAvailable": true ONLY if the current scene contains an active shopkeeper, merchant bazaar, or black market. Otherwise set false.\n' +
 '4. Companions: If the party rescues, tames, or befriends an animal, drone, or NPC ally, include "newCompanion": {"name": "Rover", "type": "Guard Dog", "buffStat": "WIS", "buffVal": 1, "buffDesc": "+1 to Wisdom Perception"}. Otherwise set null.\n' +
@@ -1564,7 +1707,7 @@
 
         async function triggerGeminiResolution(heroName, action, naturalRoll, total, sides, stat) {
             var activeHero = party.find(function(p) { return p.name.toLowerCase() === heroName.toLowerCase(); });
-            var pronounNote = activeHero && activeHero.gender ? ' [Pronouns: ' + activeHero.gender + ', Race: ' + (activeHero.race || 'Human') + ']' : '';
+            var pronounNote = activeHero && activeHero.gender ? ' [Pronouns: ' + activeHero.gender + ', Race: ' + (activeHero.race || 'Human') + ', Title: ' + (activeHero.title || 'Hero') + ']' : '';
             var compList = partyCompanions.map(function(c) { return c.name + " (" + c.type + ")"; }).join(", ");
             var compContext = compList ? " [Active Companions: " + compList + "]" : "";
 
@@ -1572,7 +1715,7 @@
                 role: "user",
                 parts: [{
                     text: '[Turn Check] ' + heroName + pronounNote + compContext + ' rolled a natural ' + naturalRoll + ' on a d' + sides + ' with ' + stat + ' modifier (Total: ' + total + ') attempting: "' + action + '".\n' +
-'Describe the outcome respecting ' + heroName + '\'s pronouns and race. If they find an ally/pet, award "newCompanion". If a trader is discovered, set "merchantAvailable": true. Include gilAward if loot is found. Designate the next hero and provide dieType & stat choices.'
+'Describe the outcome respecting ' + heroName + '\'s pronouns, title, and race. If they find an ally/pet, award "newCompanion". If a trader is discovered, set "merchantAvailable": true. Include gilAward if loot is found. Designate the next hero and provide dieType & stat choices.'
                 }]
             });
             fetchAndBroadcastGemini();
