@@ -133,7 +133,19 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            cursor: pointer;
         }
+
+        .header-quick-stats {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-top: 2px;
+        }
+        .header-quick-hp { color: var(--success-green); }
+        .header-quick-gil { color: var(--active-gold); }
 
         #narrative-box {
             flex: 1 1 auto;
@@ -166,17 +178,19 @@
             margin-bottom: 0;
         }
 
+        /* Companion Banner inside Modal */
         #companion-banner {
             display: none;
             background: #1e3734;
             border: 1px solid var(--companion-teal);
             border-radius: 6px;
             padding: 6px 10px;
-            margin-bottom: 6px;
+            margin-bottom: 10px;
             font-size: 0.8rem;
             color: #a3e4d7;
             align-items: center;
             gap: 8px;
+            line-height: 1.3;
         }
 
         .primary-stat-banner {
@@ -188,7 +202,7 @@
             border-radius: 6px;
             padding: 8px;
             text-align: center;
-            margin-bottom: 6px;
+            margin-bottom: 10px;
         }
 
         .stat-box { font-size: 0.75rem; }
@@ -201,9 +215,9 @@
             background: #1a1a1a;
             border: 1px solid #333;
             border-radius: 6px;
-            padding: 4px;
+            padding: 6px 4px;
             text-align: center;
-            margin-bottom: 8px;
+            margin-bottom: 12px;
             font-size: 0.7rem;
         }
 
@@ -340,16 +354,14 @@
 
         @media (max-height: 720px), (max-width: 380px) {
             body { padding: 4px; }
-            .primary-stat-banner { padding: 4px; gap: 4px; margin-bottom: 4px; }
-            .stat-val { font-size: 0.95rem; }
-            .abilities-bar { padding: 2px; margin-bottom: 4px; font-size: 0.65rem; }
             .utility-bar { padding: 4px 6px; margin-bottom: 4px; }
             .utility-bar .btn { font-size: 0.75rem; padding: 4px 6px; }
             #narrative-box { font-size: 0.88rem; padding: 8px 10px; }
             .dice-btn { height: 36px; font-size: 0.75rem; }
         }
 
-        #shop-modal {
+        /* Character Sheet & Shop Modals */
+        #sheet-modal, #shop-modal {
             display: none;
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -360,15 +372,16 @@
             justify-content: center;
         }
 
-        #shop-content {
+        #sheet-content, #shop-content {
             background: var(--card-bg);
             border: 2px solid var(--active-gold);
             border-radius: 10px;
             max-width: 500px;
             width: 100%;
-            max-height: 80vh;
+            max-height: 85vh;
             overflow-y: auto;
             padding: 16px;
+            box-sizing: border-box;
         }
 
         .shop-item {
@@ -601,14 +614,15 @@
         <div id="debug-log">System ready.</div>
     </div>
 
-    <!-- SCREEN 2: GAMEPLAY -->
+    <!-- SCREEN 2: GAMEPLAY (Streamlined) -->
     <div id="screen-game" class="screen">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
             <span class="badge" id="display-room-code"><span id="net-status-dot" class="status-dot"></span> Room: ----</span>
-            <div id="display-player-role">Connecting...</div>
+            <div id="display-player-role" onclick="openSheetModal()" title="Tap to view full sheet">Connecting...</div>
         </div>
 
         <div class="utility-bar">
+            <button id="sheet-btn" class="btn btn-blue" style="padding:4px 8px; margin:0; font-size:0.75rem;" onclick="openSheetModal()">📜 Sheet</button>
             <button id="tts-toggle-btn" class="btn btn-green" style="padding:4px 8px; margin:0; font-size:0.75rem;" onclick="toggleNarrationAudio()">🔊 Narrator</button>
             <button id="haven-btn" class="btn btn-teal" style="padding:4px 8px; margin:0; font-size:0.75rem;" onclick="triggerHavenRest()">🏕️ Rest</button>
             <button id="shop-btn" class="btn btn-purple" style="padding:4px 8px; margin:0; font-size:0.75rem; display:none;" onclick="openShopModal()">🛒 Trader</button>
@@ -616,28 +630,7 @@
             <button id="save-btn" class="btn btn-blue" style="padding:4px 8px; margin:0; font-size:0.75rem; display:none;" onclick="manualSaveGame()">💾 Save</button>
         </div>
 
-        <!-- Companion Banner -->
-        <div id="companion-banner">🐾 <span id="companion-text">No companion joined yet.</span></div>
-
-        <!-- Primary Stat Banner -->
-        <div class="primary-stat-banner" id="stats-banner">
-            <div class="stat-box"><span class="stat-val" id="stat-hp">--/--</span><br>HP</div>
-            <div class="stat-box"><span class="stat-val" id="stat-ac">--</span><br>Armor (AC)</div>
-            <div class="stat-box"><span class="stat-val" id="stat-lvl">1</span><br>Level</div>
-            <div class="stat-box"><span class="stat-val" id="stat-gil">50</span><br>Gil</div>
-        </div>
-
-        <!-- Core 6 Ability Scores Bar -->
-        <div class="abilities-bar" id="abilities-banner">
-            <div class="ability-box"><span>STR</span><span class="ability-val" id="stat-str">+0</span></div>
-            <div class="ability-box"><span>DEX</span><span class="ability-val" id="stat-dex">+0</span></div>
-            <div class="ability-box"><span>CON</span><span class="ability-val" id="stat-con">+0</span></div>
-            <div class="ability-box"><span>INT</span><span class="ability-val" id="stat-int">+0</span></div>
-            <div class="ability-box"><span>WIS</span><span class="ability-val" id="stat-wis">+0</span></div>
-            <div class="ability-box"><span>CHA</span><span class="ability-val" id="stat-cha">+0</span></div>
-        </div>
-
-        <!-- Story Window -->
+        <!-- Story Window (Fully Expanded) -->
         <div id="narrative-box">
             <em>Connecting to realm...</em>
         </div>
@@ -658,6 +651,45 @@
             <div id="turn-notice" class="waiting-text">Awaiting DM...</div>
         </div>
         <div id="debug-log-game" style="font-size:0.7rem; color:#666; font-family:monospace; margin-top:2px;"></div>
+    </div>
+
+    <!-- CHARACTER SHEET MODAL -->
+    <div id="sheet-modal" onclick="closeSheetModal(event)">
+        <div id="sheet-content">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <h3 id="sheet-hero-title" style="margin:0; color:var(--active-gold);">Character Sheet</h3>
+                <button class="btn" style="padding:4px 10px; margin:0; font-size:0.8rem; background:#444;" onclick="closeSheetModalDirect()">✕ Close</button>
+            </div>
+
+            <!-- Companion Banner -->
+            <div id="companion-banner">🐾 <span id="companion-text">No companion joined yet.</span></div>
+
+            <!-- Primary Stat Banner -->
+            <div class="primary-stat-banner" id="stats-banner">
+                <div class="stat-box"><span class="stat-val" id="stat-hp">--/--</span><br>HP</div>
+                <div class="stat-box"><span class="stat-val" id="stat-ac">--</span><br>Armor (AC)</div>
+                <div class="stat-box"><span class="stat-val" id="stat-lvl">1</span><br>Level</div>
+                <div class="stat-box"><span class="stat-val" id="stat-gil">50</span><br>Gil</div>
+            </div>
+
+            <!-- Core 6 Ability Scores Bar -->
+            <div class="abilities-bar" id="abilities-banner">
+                <div class="ability-box"><span>STR</span><span class="ability-val" id="stat-str">+0</span></div>
+                <div class="ability-box"><span>DEX</span><span class="ability-val" id="stat-dex">+0</span></div>
+                <div class="ability-box"><span>CON</span><span class="ability-val" id="stat-con">+0</span></div>
+                <div class="ability-box"><span>INT</span><span class="ability-val" id="stat-int">+0</span></div>
+                <div class="ability-box"><span>WIS</span><span class="ability-val" id="stat-wis">+0</span></div>
+                <div class="ability-box"><span>CHA</span><span class="ability-val" id="stat-cha">+0</span></div>
+            </div>
+
+            <!-- Carried Inventory -->
+            <div style="background:#1a1a1a; border:1px solid #333; border-radius:6px; padding:10px; font-size:0.85rem; margin-bottom:12px;">
+                <b style="color:#aaa;">Carried Equipment & Trinkets:</b>
+                <div id="sheet-inventory-list" style="margin-top:6px; color:#e0e0e0; line-height: 1.4;">None</div>
+            </div>
+
+            <button class="btn btn-blue" style="width:100%;" onclick="closeSheetModalDirect()">Return to Quest</button>
+        </div>
     </div>
 
     <!-- SHOP MODAL -->
@@ -896,11 +928,8 @@
             var hairStyle = hairEl && hairEl.value ? hairEl.value : 'short';
             var hairColor = document.getElementById(target + '-char-haircolor').value;
             var gear = document.getElementById(target + '-char-gear').value;
-            var gender = document.getElementById(target + '-hero-gender').value;
             var role = document.getElementById(target + '-hero-role').value;
-            var gKey = getGenderKey(gender);
 
-            // Palette setup
             var gearColors = {
                 iron: { body: "#7f8c8d", trim: "#bdc3c7", accent: "#34495e" },
                 leather: { body: "#8e5d34", trim: "#c49a6c", accent: "#4a2c13" },
@@ -908,7 +937,7 @@
                 gold: { body: "#d4ac0d", trim: "#f7dc6f", accent: "#b7950b" }
             }[gear] || { body: "#7f8c8d", trim: "#bdc3c7", accent: "#34495e" };
 
-            // 1. Shadow / Base outline
+            // 1. Shadow
             ctx.fillStyle = "rgba(0,0,0,0.35)";
             ctx.fillRect(8, 28, 16, 3);
 
@@ -920,17 +949,16 @@
             ctx.fillRect(10, 27, 5, 3);
             ctx.fillRect(17, 27, 5, 3);
 
-            // 3. Torso / Armor
+            // 3. Torso & Armor
             ctx.fillStyle = gearColors.body;
             ctx.fillRect(10, 14, 12, 10);
             ctx.fillStyle = gearColors.trim;
             ctx.fillRect(11, 14, 10, 2);
-            ctx.fillRect(15, 16, 2, 8); // Trim center line
+            ctx.fillRect(15, 16, 2, 8);
 
-            // Subclass / Armor Accents
             ctx.fillStyle = gearColors.accent;
-            ctx.fillRect(8, 14, 3, 4); // Left shoulder pauldrons
-            ctx.fillRect(21, 14, 3, 4); // Right shoulder pauldrons
+            ctx.fillRect(8, 14, 3, 4);
+            ctx.fillRect(21, 14, 3, 4);
 
             // 4. Arms & Hands
             ctx.fillStyle = gearColors.body;
@@ -942,10 +970,10 @@
 
             // 5. Head & Neck
             ctx.fillStyle = skin;
-            ctx.fillRect(14, 12, 4, 2); // Neck
-            ctx.fillRect(11, 6, 10, 8); // Head
+            ctx.fillRect(14, 12, 4, 2);
+            ctx.fillRect(11, 6, 10, 8);
 
-            // 6. Eyes & Expression
+            // 6. Eyes
             ctx.fillStyle = "#111";
             ctx.fillRect(13, 9, 2, 2);
             ctx.fillRect(17, 9, 2, 2);
@@ -972,7 +1000,7 @@
                 ctx.fillRect(21, 18, 2, 1);
             } else if (hairStyle === "bun") {
                 ctx.fillRect(11, 5, 10, 3);
-                ctx.fillRect(14, 2, 4, 3); // Topknot
+                ctx.fillRect(14, 2, 4, 3);
                 ctx.fillRect(10, 7, 2, 4);
                 ctx.fillRect(20, 7, 2, 4);
             } else if (hairStyle === "sidecut") {
@@ -985,17 +1013,15 @@
                 ctx.fillRect(21, 7, 3, 8);
             }
 
-            // 8. Role-based Weapon / Relic Sprite
+            // 8. Role Weapon
             if (role === "Warrior" || role === "Barbarian") {
-                // Broadsword in right hand
                 ctx.fillStyle = "#95a5a6";
                 ctx.fillRect(24, 8, 2, 14);
                 ctx.fillStyle = "#f1c40f";
-                ctx.fillRect(22, 20, 6, 2); // Crossguard
+                ctx.fillRect(22, 20, 6, 2);
                 ctx.fillStyle = "#7f8c8d";
-                ctx.fillRect(24, 22, 2, 3); // Hilt
+                ctx.fillRect(24, 22, 2, 3);
             } else if (role === "Rogue") {
-                // Dual daggers
                 ctx.fillStyle = "#bdc3c7";
                 ctx.fillRect(6, 18, 2, 7);
                 ctx.fillRect(24, 18, 2, 7);
@@ -1003,18 +1029,16 @@
                 ctx.fillRect(6, 20, 2, 1);
                 ctx.fillRect(24, 20, 2, 1);
             } else if (role === "Mage") {
-                // Arcane Staff
                 ctx.fillStyle = "#8e5d34";
                 ctx.fillRect(24, 6, 2, 20);
                 ctx.fillStyle = "#3498db";
-                ctx.fillRect(23, 4, 4, 4); // Crystal Orb
+                ctx.fillRect(23, 4, 4, 4);
                 ctx.fillStyle = "#ecf0f1";
-                ctx.fillRect(24, 5, 2, 2); // Core shine
+                ctx.fillRect(24, 5, 2, 2);
             } else if (role === "Cleric") {
-                // Scepter & Crest
                 ctx.fillStyle = "#f1c40f";
                 ctx.fillRect(24, 8, 2, 16);
-                ctx.fillRect(22, 10, 6, 2); // Cross
+                ctx.fillRect(22, 10, 6, 2);
                 ctx.fillRect(23, 6, 4, 4);
             }
 
@@ -1026,7 +1050,6 @@
             var role = document.getElementById(target + '-hero-role').value;
             var gKey = getGenderKey(gender);
 
-            // 1. Populate Gender-tailored hair styles
             var hairSelect = document.getElementById(target + '-char-hair');
             var previousHairVal = hairSelect.value;
             hairSelect.innerHTML = '';
@@ -1043,7 +1066,6 @@
                 hairSelect.selectedIndex = 0;
             }
 
-            // 2. Populate Specialization Subclasses
             var specSelect = document.getElementById(target + '-hero-spec');
             specSelect.innerHTML = '';
             var specs = ROLE_SPECIALIZATIONS[role] || [];
@@ -1054,12 +1076,41 @@
                 specSelect.appendChild(opt);
             });
 
-            // 3. Update preview of tailored starter title & kit
             var kit = getTailoredKitAndTitle(gender, role);
             var kitBox = document.getElementById(target + '-kit-preview');
             kitBox.innerHTML = '<b>Title:</b> ' + kit.title + '<br><b>Gear:</b> ' + kit.item + '<br><span style="color:#aaa; font-size:0.75rem;">' + kit.desc + '</span>';
 
             renderCustomCharacter(target);
+        }
+
+        // --- CHARACTER SHEET MODAL CONTROLS ---
+        function openSheetModal() {
+            if (!myHero) return;
+            var titleEl = document.getElementById('sheet-hero-title');
+            if (titleEl) {
+                titleEl.innerText = myHero.name + " (" + (myHero.title || myHero.role) + ")";
+            }
+
+            var invEl = document.getElementById('sheet-inventory-list');
+            if (invEl) {
+                if (myHero.inventory && myHero.inventory.length > 0) {
+                    invEl.innerHTML = myHero.inventory.map(function(item) {
+                        return "• " + item;
+                    }).join("<br>");
+                } else {
+                    invEl.innerText = "Basic adventurer gear";
+                }
+            }
+
+            document.getElementById('sheet-modal').style.display = 'flex';
+        }
+
+        function closeSheetModal(e) {
+            if (e.target.id === 'sheet-modal') closeSheetModalDirect();
+        }
+
+        function closeSheetModalDirect() {
+            document.getElementById('sheet-modal').style.display = 'none';
         }
 
         // --- NARRATION ---
@@ -1247,7 +1298,7 @@
             STORE_ITEMS.forEach(function(item) {
                 var itemRow = document.createElement('div');
                 itemRow.className = 'shop-item';
-                var alreadyOwned = myHero.inventory && myHero.inventory.includes(item.id);
+                var alreadyOwned = myHero.inventory && myHero.inventory.includes(item.name);
 
                 itemRow.innerHTML = 
                     '<div>' +
@@ -1291,7 +1342,7 @@
 
             myHero.gil -= item.cost;
             if (!myHero.inventory) myHero.inventory = [];
-            myHero.inventory.push(item.id);
+            myHero.inventory.push(item.name);
 
             myHero.maxHp += item.hpBuff;
             myHero.hp += item.hpBuff;
@@ -1487,6 +1538,8 @@
 
         function renderHeroHUD() {
             if (!myHero) return;
+
+            // Update values inside the pop-up Character Sheet Modal
             document.getElementById('stat-hp').innerText = myHero.hp + '/' + myHero.maxHp;
             document.getElementById('stat-ac').innerText = myHero.ac;
             document.getElementById('stat-lvl').innerText = myHero.level;
@@ -1501,13 +1554,20 @@
                 document.getElementById('stat-cha').innerText = (myHero.stats.CHA >= 0 ? '+' : '') + myHero.stats.CHA;
             }
 
+            // Compact Header Badge with Quick Vitals
             var roleEl = document.getElementById('display-player-role');
             if (roleEl) {
                 var heroSpecLabel = myHero.specialization ? ' • ' + myHero.specialization : '';
                 roleEl.innerHTML = 
                     '<div class="player-info-hud">' +
                         '<img src="' + (myHero.avatar || renderCustomCharacter('player')) + '" class="avatar-hud">' +
-                        '<span class="badge" title="' + (myHero.title || '') + '">' + myHero.name + ' (' + (myHero.race || 'Human') + ' ' + myHero.role + heroSpecLabel + ')' + (isHost ? ' [Host]' : '') + '</span>' +
+                        '<div style="display:flex; flex-direction:column; line-height:1.1;">' +
+                            '<span class="badge" style="font-size:0.75rem; padding:2px 6px;">' + myHero.name + heroSpecLabel + (isHost ? ' [Host]' : '') + '</span>' +
+                            '<span class="header-quick-stats">' +
+                                '<span class="header-quick-hp">❤️ ' + myHero.hp + '/' + myHero.maxHp + '</span>' +
+                                '<span class="header-quick-gil">💰 ' + (myHero.gil || 0) + '</span>' +
+                            '</span>' +
+                        '</div>' +
                     '</div>';
             }
         }
@@ -1611,11 +1671,14 @@
                 updateCompanionHUD();
             }
             else if (data.type === 'ADD_COMPANION') {
-                partyCompanions.push(data.companion);
-                updateCompanionHUD();
-                narrativeBox.innerHTML += '<br><b style="color:var(--companion-teal);">🐾 ' + data.companion.name + ' (' + data.companion.type + ') has joined the party! [' + data.companion.buffDesc + ']</b>';
-                narrativeBox.scrollTop = narrativeBox.scrollHeight;
-                speakNarrative(data.companion.name + " the companion has joined the party!");
+                var exists = partyCompanions.some(function(c) { return c.name.toLowerCase() === data.companion.name.toLowerCase(); });
+                if (!exists) {
+                    partyCompanions.push(data.companion);
+                    updateCompanionHUD();
+                    narrativeBox.innerHTML += '<br><b style="color:var(--companion-teal);">🐾 ' + data.companion.name + ' (' + data.companion.type + ') has joined the party! [' + data.companion.buffDesc + ']</b>';
+                    narrativeBox.scrollTop = narrativeBox.scrollHeight;
+                    speakNarrative(data.companion.name + " the companion has joined the party!");
+                }
             }
             else if (data.type === 'RESTORE_HERO_STATS') {
                 if (myHero && myHero.name.toLowerCase() === data.hero.name.toLowerCase()) {
@@ -1884,11 +1947,14 @@
                 }
 
                 if (parsed.newCompanion && parsed.newCompanion.name) {
-                    partyCompanions.push(parsed.newCompanion);
-                    broadcastToAll({
-                        type: 'ADD_COMPANION',
-                        companion: parsed.newCompanion
-                    });
+                    var exists = partyCompanions.some(function(c) { return c.name.toLowerCase() === parsed.newCompanion.name.toLowerCase(); });
+                    if (!exists) {
+                        partyCompanions.push(parsed.newCompanion);
+                        broadcastToAll({
+                            type: 'ADD_COMPANION',
+                            companion: parsed.newCompanion
+                        });
+                    }
                 }
 
                 if (parsed.completedTask && parsed.levelUpHero && parsed.levelUpHero !== 'NONE') {
